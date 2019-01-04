@@ -1,0 +1,31 @@
+package service
+
+import (
+	"examples/protocol/dao_cmd"
+
+	"github.com/8treenet/gotree/helper"
+
+	"github.com/8treenet/gotree/business"
+)
+
+func init() {
+	business.RegisterService(new(Feature).Gotree())
+}
+
+type Feature struct {
+	business.BusinessService
+}
+
+// Gotree
+func (self *Feature) Gotree() *Feature {
+	self.BusinessService.Gotree(self)
+	return self
+}
+
+// Course
+func (self *Feature) Course() {
+	cmd := new(dao_cmd.Course).Gotree("ServiceFeature", 666)
+	if err := self.CallDao(cmd, &helper.VoidValue{}); err != nil {
+		helper.Log().WriteWarn(err)
+	}
+}

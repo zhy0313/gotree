@@ -139,8 +139,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"jryghq.cn/lib"
-	"jryghq.cn/utils"
+	"github.com/8treenet/gotree/helper"
+	"github.com/8treenet/gotree/lib"
 )
 
 const (
@@ -153,7 +153,7 @@ const (
 // because Typeof takes an empty interface value. This is annoying.
 var typeOfError = reflect.TypeOf((*error)(nil)).Elem()
 
-var goDict = new(lib.GoDict).GoDict()
+var goDict = new(lib.GoDict).Gotree()
 var currentCallNum int32 = 0
 
 func GoDict() *lib.GoDict {
@@ -409,7 +409,7 @@ func (m *methodType) NumCalls() (n uint) {
 func (s *service) call(server *Server, sending *sync.Mutex, mtype *methodType, req *Request, argv, replyv reflect.Value, codec ServerCodec) {
 	defer func() {
 		if perr := recover(); perr != nil {
-			utils.Log().WriteError("panicType:", perr, "rpc argv:", argv.Interface())
+			helper.Log().WriteError("panicType:", perr, "rpc argv:", argv.Interface())
 			server.sendResponse(sending, req, replyv.Interface(), codec, "panic:"+fmt.Sprint(perr))
 			server.freeRequest(req)
 		}
@@ -424,9 +424,9 @@ func (s *service) call(server *Server, sending *sync.Mutex, mtype *methodType, r
 	newtype := reflect.TypeOf(s.rcvr.Interface()).Elem()
 	t := reflect.New(newtype)
 	//调用构造函数
-	values := t.MethodByName(newtype.Name()).Call(nil)
+	values := t.MethodByName("Gotree").Call(nil)
 	if len(values) < 1 {
-		utils.Log().WriteError("controllers 接口返回构造函数未返回 指针")
+		helper.Log().WriteError("controllers 接口返回构造函数未返回 指针")
 	}
 	type callip interface {
 		RpcInvoke(net.Conn) bool
@@ -471,17 +471,19 @@ func (s *service) call(server *Server, sending *sync.Mutex, mtype *methodType, r
 	}
 
 	errmsg := ""
-	var finishErr error
 	if errInter != nil {
 		errmsg = errInter.(error).Error()
-		finishErr = errInter.(error)
-		if bseq == "" {
-			utils.Log().WriteWarn("控制器:"+newtype.Name(), "方法:"+mtype.method.Name, "错误:"+finishErr.Error())
+		if bseq == "" && errmsg != "ServerShutDown" {
+			helper.Log().WriteWarn("控制器:"+newtype.Name(), "方法:"+mtype.method.Name, "错误:"+errmsg)
 		}
 	}
 
 	if ok {
-		ci.Finish(mtype.method.Name, replyv, finishErr)
+		var ferr error
+		if errmsg != "" {
+			ferr = errors.New(errmsg)
+		}
+		ci.Finish(mtype.method.Name, replyv, ferr)
 	}
 	server.sendResponse(sending, req, replyv.Interface(), codec, errmsg)
 	server.freeRequest(req)
@@ -774,7 +776,7 @@ func FieldEmpty(v reflect.Value) error {
 		def := defs[index]
 		sn := structName[index]
 		if def != "empty" {
-			return errors.New(" 命令非空检查 " + t.Name() + "." + sn + "(" + eTyps[index].String() + ")=" + fieldValue)
+			return errors.New("命令非空检查 " + t.Name() + "." + sn + "(" + eTyps[index].String() + ")=" + fieldValue)
 		}
 	}
 

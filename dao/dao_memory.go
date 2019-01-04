@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"jryghq.cn/lib"
-	"jryghq.cn/utils"
+	"github.com/8treenet/gotree/helper"
+	"github.com/8treenet/gotree/lib"
 )
 
 //DaoMemory 内存数据源
@@ -19,22 +19,22 @@ type DaoMemory struct {
 	dictEep   map[interface{}]int64
 }
 
-func (self *DaoMemory) DaoMemory(child interface{}) *DaoMemory {
-	self.Object.Object(self)
+func (self *DaoMemory) Gotree(child interface{}) *DaoMemory {
+	self.Object.Gotree(self)
 	self.AddChild(self, child)
 	self.daoName = ""
 	self.AddSubscribe("MemoryOn", self.memoryOn)
 
-	self.dict = new(lib.Dict).Dict()
+	self.dict = new(lib.Dict).Gotree()
 	self.dictEep = make(map[interface{}]int64)
 	return self
 }
 
 //TestOn 单元测试 开启
 func (self *DaoMemory) TestOn() {
-	mode := utils.Config().String("sys::mode")
+	mode := helper.Config().String("sys::Mode")
 	if mode == "prod" {
-		utils.Log().WriteError("生产环境不可以使用单元测试model")
+		helper.Log().WriteError("生产环境不可以使用单元测试model")
 		os.Exit(1)
 	}
 	self.DaoInit()
@@ -69,7 +69,7 @@ func (self *DaoMemory) Get(key, value interface{}) bool {
 }
 
 // SetTnx 当key不存在设置成功返回true 否则返回false
-func (self *DaoMemory) SetTnx(key, value interface{}) bool {
+func (self *DaoMemory) Setnx(key, value interface{}) bool {
 	defer self.dictMutex.Unlock()
 	self.dictMutex.Lock()
 	if self.dict.Check(key) {
@@ -98,7 +98,7 @@ func (self *DaoMemory) MultiSet(args ...interface{}) {
 }
 
 // MultiSet 多条
-func (self *DaoMemory) MultiSetTnx(args ...interface{}) bool {
+func (self *DaoMemory) MultiSetnx(args ...interface{}) bool {
 	defer self.dictMutex.Unlock()
 	self.dictMutex.Lock()
 	if len(args) <= 0 {
@@ -121,7 +121,7 @@ func (self *DaoMemory) MultiSetTnx(args ...interface{}) bool {
 }
 
 // Eexpire 设置 key 的生命周期, sec:秒
-func (self *DaoMemory) Eexpire(key interface{}, sec int) {
+func (self *DaoMemory) Expire(key interface{}, sec int) {
 	defer self.dictMutex.Unlock()
 	self.dictMutex.Lock()
 	if !self.dict.Check(key) {

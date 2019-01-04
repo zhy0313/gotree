@@ -1,0 +1,89 @@
+package dao_cmd
+
+import (
+	rc "github.com/8treenet/gotree/remote_call"
+)
+
+func init() {
+	//UserGet加入熔断 条件:15秒内 %50超时, 60秒后恢复
+	rc.RegisterBreaker(new(UserGet), 15, 0.5, 60)
+}
+
+//userCmdBase
+type userCmdBase struct {
+	rc.RpcCmd
+}
+
+func (self *userCmdBase) Gotree(child ...interface{}) *userCmdBase {
+	self.RpcCmd.Gotree(self)
+	self.AddChild(self, child...)
+	return self
+}
+
+// Control
+func (self *userCmdBase) Control() string {
+	return "User"
+}
+
+// DaoAddr 访问ip地址
+func (self *userCmdBase) DaoAddr(rn rc.RpcNode) string {
+	//rn.RandomRpcAddr() 随机节点访问
+	//rn.BalanceRpcAddr() 负载均衡节点访问
+	//rn.DummyHashRpcAddr(123) 一致性哈希节点访问
+	//rn.AllNode() 获取全部节点,自定义方式访问
+	//rn.SlaveRpcAddr()  //返回随机从节点  主节点:节点id=1,当只有主节点返回主节点
+	//rn.MasterRpcAddr() //返回主节点 主节点:节点id=1
+	return rn.RandomRpcAddr()
+}
+
+// UserAdd 增加用户
+type UserAdd struct {
+	userCmdBase //继承UserCmd
+	UserName    string
+	Money       int64
+}
+
+func (self *UserAdd) Gotree(uname string, money int64) *UserAdd {
+	self.userCmdBase.Gotree(self)
+	self.UserName = uname
+	self.Money = money
+	return self
+}
+
+func (self *UserAdd) Action() string {
+	return "Add"
+}
+
+// UserMoneyAdd 增加用户金钱
+type UserMoneyAdd struct {
+	userCmdBase //继承UserCmd
+	UserId      int64
+	Money       int64
+}
+
+func (self *UserMoneyAdd) Gotree(uid int64, money int64) *UserMoneyAdd {
+	self.userCmdBase.Gotree(self)
+	self.UserId = uid
+	self.Money = money
+	return self
+}
+
+func (self *UserMoneyAdd) Action() string {
+	return "MoneyAdd"
+}
+
+// UserGet 获取用户信息
+type UserGet struct {
+	userCmdBase //继承UserCmd
+	UserId      int64
+}
+
+func (self *UserGet) Gotree(uid int64) *UserGet {
+	self.userCmdBase.Gotree(self)
+	self.UserId = uid
+	return self
+}
+
+func (self *UserGet) Action() string {
+	return "Get"
+}

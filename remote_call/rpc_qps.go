@@ -5,9 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"jryghq.cn/utils"
-
-	"jryghq.cn/lib"
+	"github.com/8treenet/gotree/helper"
+	"github.com/8treenet/gotree/lib"
 )
 
 const (
@@ -28,12 +27,13 @@ type RpcQps struct {
 	beginTime int64
 }
 
-func (self *RpcQps) RpcQps() *RpcQps {
-	self.Object.Object(self)
+func (self *RpcQps) Gotree() *RpcQps {
+	self.Object.Gotree(self)
 	self.dict = make(map[string]*qps)
 	self.beginTime = time.Now().Unix()
 	lib.RunTickStopTimer(_CHECK_QPS_RESET, self.tick) //定时器检测超时节点
 	self.AddSubscribe("DaoQps", self.list)
+	self.AddSubscribe("DaoQpsBeginTime", self.DaoQpsBeginTime)
 	return self
 }
 
@@ -41,7 +41,7 @@ func (self *RpcQps) Qps(serviceMethod string, ms int64) {
 	defer self.mutex.Unlock()
 	self.mutex.Lock()
 	if ms < 0 {
-		utils.Log().WriteError("RpcQps ms < 0 ServiceMethod:", serviceMethod)
+		helper.Log().WriteError("RpcQps ms < 0 ServiceMethod:", serviceMethod)
 		return
 	}
 
@@ -89,7 +89,7 @@ func (self *RpcQps) tick(stop *bool) {
 	if len(list) > 0 {
 		data, e := json.Marshal(list)
 		if e == nil {
-			utils.Log().WriteInfo("business qps", string(data))
+			helper.Log().WriteInfo("business qps", string(data))
 		}
 	}
 
@@ -136,4 +136,9 @@ func (self *RpcQps) list(args ...interface{}) {
 	}
 	*ret = list
 	return
+}
+
+func (self *RpcQps) DaoQpsBeginTime(args ...interface{}) {
+	ret := args[0].(*int64)
+	*ret = self.beginTime
 }

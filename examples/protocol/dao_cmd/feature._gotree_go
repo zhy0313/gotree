@@ -1,0 +1,41 @@
+package dao_cmd
+
+import (
+	rc "github.com/8treenet/gotree/remote_call"
+)
+
+// Course feature示例
+type Course struct {
+	orderCmdBase //继承orderCmdBase
+	CourseString string
+	CourseInt    int
+	CourseList   []int64 `opt:"empty"` //如果cmd参数可为空、""、0 加入此tag,否则会报错喔!
+	CourseByte   byte    `opt:"empty"`
+}
+
+func (self *Course) Gotree(courseString string, courseInt int) *Course {
+	self.orderCmdBase.Gotree(self)
+	self.CourseString = courseString
+	self.CourseInt = courseInt
+	return self
+}
+
+func (self *Course) Action() string {
+	return "Course"
+}
+
+// Control
+func (self *Course) Control() string {
+	return "Feature"
+}
+
+// DaoAddr 访问ip地址
+func (self *Course) DaoAddr(rn rc.RpcNode) string {
+	//rn.RandomRpcAddr() 随机节点访问
+	//rn.BalanceRpcAddr() 负载均衡节点访问
+	//rn.DummyHashRpcAddr(123) 一致性哈希节点访问
+	//rn.AllNode() 获取全部节点,自定义方式访问
+	//rn.SlaveRpcAddr()  //返回随机从节点  主节点:节点id=1,当只有主节点返回主节点
+	//rn.MasterRpcAddr() //返回主节点 主节点:节点id=1
+	return rn.RandomRpcAddr()
+}

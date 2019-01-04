@@ -4,10 +4,10 @@ import (
 	"strconv"
 	"strings"
 
-	"jryghq.cn/lib"
-	"jryghq.cn/lib/rpc"
-	"jryghq.cn/remote_call"
-	"jryghq.cn/utils"
+	"github.com/8treenet/gotree/helper"
+	"github.com/8treenet/gotree/lib"
+	"github.com/8treenet/gotree/lib/rpc"
+	"github.com/8treenet/gotree/remote_call"
 )
 
 type BusinessService struct {
@@ -16,8 +16,8 @@ type BusinessService struct {
 	_head        remote_call.RpcHeader
 }
 
-func (self *BusinessService) BusinessService(child interface{}) *BusinessService {
-	self.Object.Object(self)
+func (self *BusinessService) Gotree(child interface{}) *BusinessService {
+	self.Object.Gotree(self)
 	self.AddChild(self, child)
 	self._openService = false
 	return self
@@ -25,7 +25,7 @@ func (self *BusinessService) BusinessService(child interface{}) *BusinessService
 
 func (self *BusinessService) CallDao(obj interface{}, reply interface{}) error {
 	if !self._openService {
-		utils.Log().WriteError("禁止重复实例化后调用")
+		helper.Log().WriteError("禁止重复实例化后调用")
 		panic("禁止重复实例化后调用")
 	}
 	var client *remote_call.RpcClient
@@ -49,9 +49,9 @@ func (self *BusinessService) ReqHeader(k string) string {
 }
 
 func (self *BusinessService) TestOn(testDaos ...string) {
-	mode := utils.Config().String("sys::mode")
+	mode := helper.Config().String("sys::Mode")
 	if mode == "prod" {
-		utils.Log().WriteError("生产环境不可以使用单元测试service")
+		helper.Log().WriteError("生产环境不可以使用单元测试service")
 		panic("生产环境不可以使用单元测试service")
 	}
 	rpc.GoDict().Set("bseq", "ServiceUnit")
@@ -71,26 +71,9 @@ func (self *BusinessService) TestOn(testDaos ...string) {
 func (self *BusinessService) OpenService() {
 	exist := _scl.CheckService(self.TopChild())
 	if exist {
-		utils.Log().WriteError("禁止重复实例化")
+		helper.Log().WriteError("禁止重复实例化")
 		panic("禁止重复实例化")
 	}
 	self._openService = true
 	return
-}
-
-//Async 异步执行
-func (self *BusinessService) Async(run func(ac AsyncController), completeds ...func()) {
-	var completed func()
-	if len(completeds) > 0 {
-		completed = completeds[0]
-	}
-	ac := new(async).async(run, completed)
-	go ac.execute()
-}
-
-// Broadcast 调用所有注册service的method方法. 潜龙勿用,会使项目非常难以维护
-func (self *BusinessService) Broadcast(method string, arg interface{}) {
-	if e := _scl.Broadcast(method, arg); e != nil {
-		utils.Log().WriteError("Buesiness ServiceBroadcast errror:" + e.Error())
-	}
 }

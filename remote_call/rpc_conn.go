@@ -6,13 +6,13 @@ import (
 	"sync"
 	"time"
 
-	"jryghq.cn/lib"
+	"github.com/8treenet/gotree/lib"
 )
 
 var connPool *rpcConnPool
 
 func init() {
-	connPool = new(rpcConnPool).rpcConnPool()
+	connPool = new(rpcConnPool).Gotree()
 }
 
 type rpcConn struct {
@@ -26,8 +26,8 @@ type rpcConn struct {
 	exit      chan bool
 }
 
-func (self *rpcConn) rpcConn(addr string, id int) *rpcConn {
-	self.Object.Object(self)
+func (self *rpcConn) Gotree(addr string, id int) *rpcConn {
+	self.Object.Gotree(self)
 	self.status = 0
 	self.addr = addr
 	self.id = id
@@ -112,8 +112,8 @@ type rpcConnPool struct {
 	mutex sync.Mutex
 }
 
-func (self *rpcConnPool) rpcConnPool() *rpcConnPool {
-	self.Object.Object(self)
+func (self *rpcConnPool) Gotree() *rpcConnPool {
+	self.Object.Gotree(self)
 	self.pool = make(map[string]map[int]*rpcConn)
 	return self
 }
@@ -131,7 +131,7 @@ func (self *rpcConnPool) takeConn(addr string) (*rpcConn, error) {
 				conn = nil
 			}
 		} else {
-			conn = new(rpcConn).rpcConn(addr, i)
+			conn = new(rpcConn).Gotree(addr, i)
 			m[i] = conn
 		}
 		self.mutex.Unlock()

@@ -13,7 +13,7 @@ type ObServer struct {
 }
 
 //初始化
-func (self *ObServer) ObServer() *ObServer {
+func (self *ObServer) Gotree() *ObServer {
 	self.handleMap = make(map[interface{}]handlerFunc)
 	return self
 }

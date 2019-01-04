@@ -1,18 +1,29 @@
 package lib
 
 import (
+	"math"
+	"math/rand"
+	"strconv"
+	"sync"
 	"sync/atomic"
 	"time"
 
-	"jryghq.cn/utils"
+	"github.com/8treenet/gotree/helper"
 )
 
 //系统启动时间
 var sysStartTime time.Time
 var currentTimeNum int32 = 0
+var _gGoDict *GoDict
 
+func SetGoDict(godict *GoDict) {
+	_gGoDict = godict
+}
 func init() {
 	sysStartTime = time.Now()
+	x := int64(rand.Intn(10000))
+	identification = strconv.FormatInt(x, 36)
+	tseq = 1
 }
 
 func CurrentTimeNum() int {
@@ -87,12 +98,11 @@ func (self *timer) triggerLoop(name string) {
 	defer func() {
 		atomic.AddInt32(&currentTimeNum, -1)
 		if perr := recover(); perr != nil {
-			utils.Log().WriteError(perr)
+			helper.Log().WriteError(perr)
 		}
 		_gGoDict.Remove()
 	}()
 
-	_gGoDict.Set("bseq", name+"Timer")
 	n := self.n
 	if n > 1000 {
 		n = 1000
@@ -112,6 +122,7 @@ func (self *timer) triggerLoop(name string) {
 		}
 
 		if deltaTime >= self.n {
+			_gGoDict.Set("bseq", "t-"+getTseq())
 			self.tickfunc()
 			deltaTime = 0
 		}
@@ -124,7 +135,7 @@ func (self *timer) triggerLoop(name string) {
 func (self *timer) tickLoop() {
 	defer func() {
 		if perr := recover(); perr != nil {
-			utils.Log().WriteError(perr)
+			helper.Log().WriteError(perr)
 		}
 	}()
 	for {
@@ -140,7 +151,7 @@ func (self *timer) tickLoop() {
 func (self *timer) defaultLoop() {
 	defer func() {
 		if perr := recover(); perr != nil {
-			utils.Log().WriteError(perr)
+			helper.Log().WriteError(perr)
 		}
 	}()
 	for {
@@ -152,12 +163,11 @@ func (self *timer) defaultLoop() {
 func (self *timer) dayLoop(hour, minute int, name string) {
 	defer func() {
 		if perr := recover(); perr != nil {
-			utils.Log().WriteError(perr)
+			helper.Log().WriteError(perr)
 		}
 		_gGoDict.Remove()
 	}()
 
-	_gGoDict.Set("bseq", name+"Timer")
 	currentHour := time.Now().Hour()
 	currentMinute := time.Now().Minute()
 	var n int64
@@ -178,6 +188,7 @@ func (self *timer) dayLoop(hour, minute int, name string) {
 		diff := n - unix
 		diffTick := int(float32(diff) * float32(0.01))
 		if unix > n {
+			_gGoDict.Set("bseq", "t-"+getTseq())
 			self.timeDay()
 			break
 		}
@@ -191,4 +202,21 @@ func (self *timer) dayLoop(hour, minute int, name string) {
 //GetSysClock 获取程序执行时间
 func GetSysClock() int64 {
 	return time.Now().Unix() - sysStartTime.Unix()
+}
+
+var tseq int64
+var identification string
+var tseqMutex sync.Mutex
+
+func getTseq() (result string) {
+	defer tseqMutex.Unlock()
+	tseqMutex.Lock()
+	result = identification
+	result += strconv.FormatInt(tseq, 36)
+	if tseq == math.MaxInt64 {
+		tseq = 1
+		return
+	}
+	tseq += 1
+	return
 }

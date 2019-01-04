@@ -1,0 +1,58 @@
+package unit
+
+import (
+	"examples/protocol/business_cmd"
+	"examples/protocol/business_value"
+	"fmt"
+	"math/rand"
+	"testing"
+
+	"github.com/8treenet/gotree/api"
+)
+
+//模拟公网端调用，等同beego或gin或tcp网关的项目
+
+//TestUserRegister 注册用户
+func TestUserRegister(t *testing.T) {
+	api.AppendBusiness("127.0.0.1:8888")
+	api.Run()
+
+	userName := fmt.Sprintf("gotree_%d", rand.Intn(999999))
+	cmd := new(business_cmd.UserRegister).Gotree(userName)
+	value := business_value.UserRegister{}
+	e := api.RpcClient().Call(cmd, &value)
+	t.Log(value, e)
+}
+
+//TestStore 查看商品
+func TestStore(t *testing.T) {
+	api.AppendBusiness("127.0.0.1:8888")
+	api.Run()
+
+	cmd := new(business_cmd.Store).Gotree([]int64{1, 2, 3, 4, 5, 6, 7})
+	value := business_value.Store{}
+	e := api.RpcClient().Call(cmd, &value)
+	t.Log(value, e)
+}
+
+//TestShopping 购买商品
+func TestShopping(t *testing.T) {
+	api.AppendBusiness("127.0.0.1:8888")
+	api.Run()
+
+	cmd := new(business_cmd.Shopping).Gotree(1, 1)
+	value := business_value.Shopping{}
+	e := api.RpcClient().Call(cmd, &value)
+	t.Log(value, e)
+}
+
+//TestUserOrder 查看购买记录
+func TestUserOrder(t *testing.T) {
+	api.AppendBusiness("127.0.0.1:8888")
+	api.Run()
+
+	cmd := new(business_cmd.UserOrder).Gotree(1)
+	value := business_value.UserOrder{}
+	e := api.RpcClient().Call(cmd, &value)
+	t.Log(value, e)
+}

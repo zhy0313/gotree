@@ -1,0 +1,51 @@
+package api
+
+import (
+	"encoding/json"
+
+	"github.com/8treenet/gotree/dao"
+)
+
+// TaoBaoIp
+type TaoBaoIp struct {
+	dao.DaoApi
+}
+
+func init() {
+	dao.RegisterApi(new(TaoBaoIp).Gotree())
+}
+
+//Gotree
+func (self *TaoBaoIp) Gotree() *TaoBaoIp {
+	self.DaoApi.Gotree(self)
+	return self
+}
+
+// Dao
+func (self *TaoBaoIp) Api() string {
+	return "TaoBaoIp"
+}
+
+// Country
+func (self *TaoBaoIp) Country(ip string) (country string, err error) {
+	//rest doc http://ip.taobao.com/instructions.html
+	data, err := self.HttpGet("/service/getIpInfo.php", map[string]interface{}{"ip": ip})
+	if err != nil {
+		return
+	}
+	var jdata struct {
+		Code int `json:"code"`
+		Data struct {
+			IP      string `json:"ip"`
+			Country string `json:"country"`
+			Region  string `json:"region"`
+			City    string `json:"city"`
+		} `json:"data"`
+	}
+	err = json.Unmarshal(data, &jdata)
+	if err != nil {
+		return "", err
+	}
+	country = jdata.Data.Country
+	return
+}

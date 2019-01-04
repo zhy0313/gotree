@@ -1,0 +1,79 @@
+package controllers
+
+import (
+	"examples/dao/sources/models/user"
+	"examples/protocol/dao_cmd"
+	"examples/protocol/dao_value"
+	"fmt"
+
+	"github.com/8treenet/gotree/dao"
+	"github.com/8treenet/gotree/helper"
+)
+
+type UserController struct {
+	dao.DaoController
+}
+
+func init() {
+	dao.RegisterController(new(UserController).Gotree())
+}
+
+// Gotree
+func (self *UserController) Gotree() *UserController {
+	self.DaoController.Gotree(self)
+	return self
+}
+
+// Prepare
+func (self *UserController) Prepare(method string, argv interface{}) {
+	helper.Log().WriteInfo("Prepare:", method, argv)
+}
+
+//Finish
+func (self *UserController) Finish(method string, reply interface{}, e error) {
+	helper.Log().WriteInfo("Finish:", method, fmt.Sprint(reply), e)
+}
+
+// Add
+func (self *UserController) Add(cmd dao_cmd.UserAdd, result *dao_value.UserAdd) (e error) {
+	var (
+		mUser *user.User
+	)
+	self.Model(&mUser)
+	*result = dao_value.UserAdd{}
+
+	result.UserId, e = mUser.Add(cmd.UserName, cmd.Money)
+	return
+}
+
+// MoneyAdd
+func (self *UserController) MoneyAdd(cmd dao_cmd.UserMoneyAdd, result *helper.VoidValue) (e error) {
+	var (
+		mUser *user.User
+	)
+	self.Model(&mUser)
+	*result = helper.VoidValue{}
+
+	e = mUser.AddMoney(cmd.UserId, cmd.Money)
+	return
+}
+
+// Get
+func (self *UserController) Get(cmd dao_cmd.UserGet, result *dao_value.UserGet) (e error) {
+	var (
+		mUser *user.User
+	)
+	self.Model(&mUser)
+	*result = dao_value.UserGet{}
+
+	u, e := mUser.Get(cmd.UserId)
+	if e != nil {
+		return
+	}
+	helper.Log().WriteInfo("mUser.Get:", u)
+
+	result.Id = u.Id
+	result.Money = u.Money
+	result.Name = u.Name
+	return
+}

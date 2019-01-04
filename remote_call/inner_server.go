@@ -4,18 +4,15 @@ import (
 	"fmt"
 	"os"
 	"runtime"
-	"sync"
+	"strings"
 	"time"
 
-	"jryghq.cn/utils"
-
-	"jryghq.cn/lib"
-	rpc "jryghq.cn/lib/rpc"
+	"github.com/8treenet/gotree/helper"
+	"github.com/8treenet/gotree/lib"
+	rpc "github.com/8treenet/gotree/lib/rpc"
 )
 
 func init() {
-	serverInfo = make(map[string][]string)
-	serverInfoTime = make(map[string]int64)
 	startTime = time.Now().Format("2006-01-02 15:04:05")
 }
 
@@ -23,55 +20,19 @@ type InnerServerController struct {
 	RpcController
 }
 
-func (self *InnerServerController) InnerServerController() *InnerServerController {
-	self.RpcController.RpcController(self)
+func (self *InnerServerController) Gotree() *InnerServerController {
+	self.RpcController.Gotree(self)
 	return self
 }
 
 //HandShake dao容器服务器发来的握手
 func (self *InnerServerController) HandShake(cmd struct {
 	DaoList []DaoNodeInfo
-	Info    []string `opt:"empty"` //程序信息
 }, ret *int) error {
 	//获取远程dao容器服务器ip
 	ip := self.RemoteAddr()
 	unix := time.Now().Unix()
-	var list []*NodeInfo
-	self.NotitySubscribe("InnerDaoInfo", &list)
 
-	//添加dao节点
-	for _, dni := range cmd.DaoList {
-		for _, listItem := range list {
-			if listItem.name == dni.Name && listItem.id == dni.ID && (listItem.ip != ip || listItem.port != dni.Port) {
-				emsg := fmt.Sprintf("business内部连接警告, 已存在dao:(名字:%s,id:%d,ip:%s,端口:%s)", dni.Name, dni.ID, listItem.ip, listItem.port)
-				utils.Log().WriteWarn(emsg)
-			}
-		}
-		node := NodeInfo{
-			name:     dni.Name,
-			lastUnxi: unix,
-			ip:       ip,
-			id:       dni.ID,
-			port:     dni.Port,
-			Extra:    dni.Extra,
-		}
-		if len(cmd.Info) > 0 {
-			addServerInfo(node.ip+":"+node.port, cmd.Info)
-		}
-		//通知节点接入
-		self.NotitySubscribe("HandShakeAddNode", node)
-	}
-
-	*ret = 666
-	return nil
-}
-
-func (self *InnerServerController) DaoOff(cmd struct {
-	DaoList []DaoNodeInfo
-	Info    []string `opt:"empty"` //程序信息
-}, ret *int) error {
-	ip := self.RemoteAddr()
-	unix := time.Now().Unix() - 15
 	//添加dao节点
 	for _, dni := range cmd.DaoList {
 		node := NodeInfo{
@@ -82,12 +43,10 @@ func (self *InnerServerController) DaoOff(cmd struct {
 			port:     dni.Port,
 			Extra:    dni.Extra,
 		}
-		if len(cmd.Info) > 0 {
-			addServerInfo(node.ip+":"+node.port, cmd.Info)
-		}
 		//通知节点接入
 		self.NotitySubscribe("HandShakeAddNode", node)
 	}
+
 	*ret = 666
 	return nil
 }
@@ -119,23 +78,56 @@ func (self *InnerServerController) DaoStatus(arg interface{}, ret *string) error
 
 //DaoServerInfo dao服务器信息
 func (self *InnerServerController) DaoServerInfo(arg interface{}, ret *string) error {
-	list := getServerInfo()
+	if *ret != "" {
+		*ret += ";"
+	}
+	var list []*NodeInfo
+	self.NotitySubscribe("InnerDaoInfo", &list)
+	addrs := make(map[string]bool)
 	for _, item := range list {
+		addrs[item.ip+":"+item.port] = true
+	}
+
+	for addr, _ := range addrs {
+		client, err := jsonRpc(addr)
+		if err != nil {
+			continue
+		}
+		var result string
+		if client.Call("InnerServer.DaoInfo", "666", &result) != nil {
+			client.Close()
+			continue
+		}
+		client.Close()
 		if *ret != "" {
 			*ret += ";"
 		}
-		str := fmt.Sprintf("dao服务地址:%s, 使用内存:%smb, GCCPU占用:%s, GC次数:%s, 并发:%s, 数据库连接:%s, 启动时间:%s", item.Addr, item.List[0], item.List[1], item.List[2], item.List[3], item.List[4], item.List[5])
-		*ret += str
+
+		list := strings.Split(result, ",")
+		if len(list) < 8 {
+			continue
+		}
+
+		*ret += fmt.Sprintf("dao服务地址:%s, 使用内存:%smb, GCCPU占用:%s, GC次数:%s, 请求:%s, 数据库连接:%s, 日志队列:%s, 异步队列:%s, 启动时间:%s", addr, list[0], list[1], list[2], list[3], list[5], list[6], list[7], list[4])
 	}
+	return nil
+}
+
+//DaoInfo dao服务器信息
+func (self *InnerServerController) DaoInfo(arg interface{}, ret *string) error {
+	*ret = strings.Join(sysInfo(), ",")
 	return nil
 }
 
 //BusinessInfo Business服务信息
 func (self *InnerServerController) BusinessInfo(arg interface{}, ret *string) error {
-	m := runtime.MemStats{}
-	runtime.ReadMemStats(&m)
-	num := rpc.CurrentCallNum() + lib.CurrentTimeNum() + AsynNumFunc()
-	*ret = fmt.Sprintf("使用内存:%smb, GCCPU占用:%s, GC次数:%s, 并发:%d, 启动时间:%s", fmt.Sprint(m.Alloc/1024/1024), fmt.Sprintf("%.3f", m.GCCPUFraction), fmt.Sprint(m.NumGC), num, startTime)
+	*ret = ""
+	list := sysInfo()
+	if len(list) < 7 {
+		return nil
+	}
+
+	*ret = fmt.Sprintf("使用内存:%smb, GCCPU占用:%s, GC次数:%s, 请求:%d, 定时:%d, 异步:%d, 日志队列:%s, 启动时间:%s", list[0], list[1], list[2], rpc.CurrentCallNum(), lib.CurrentTimeNum(), AsynNumFunc(), list[6], startTime)
 	return nil
 }
 
@@ -149,7 +141,8 @@ func (self *InnerServerController) DaoQps(arg interface{}, ret *string) error {
 		MinMs         int64 //最低用时
 	}
 	self.NotitySubscribe("DaoQps", &list)
-	utils.ArraySort(&list, "AvgMs")
+	helper.SliceSort(&list, "AvgMs")
+	*ret += fmt.Sprintf("%46s %12s %10s %10s %10s", "Call", "Count", "MaxMs", "MinMs", "AvgMs")
 	for _, item := range list {
 		if *ret != "" {
 			*ret += "??"
@@ -160,63 +153,45 @@ func (self *InnerServerController) DaoQps(arg interface{}, ret *string) error {
 			callcount = fmt.Sprintf("%.2fk", float32(item.Count)/1000.0)
 		}
 
-		*ret += fmt.Sprintf("%46s \x1b[0;31m%12s\x1b[0m \x1b[0;31m%10d\x1b[0mms \x1b[0;31m%10d\x1b[0mms \x1b[0;31m%10d\x1b[0mms", item.ServiceMethod, callcount, item.MaxMs, item.MinMs, item.AvgMs)
+		*ret += fmt.Sprintf("%46s \x1b[0;31m%12s\x1b[0m \x1b[0;31m%10d\x1b[0m \x1b[0;31m%10d\x1b[0m \x1b[0;31m%10d\x1b[0m", item.ServiceMethod, callcount, item.MaxMs, item.MinMs, item.AvgMs)
 	}
 	return nil
 }
 
-var serverInfo map[string][]string
-var serverInfoTime map[string]int64
-var serverInfoMutex sync.Mutex
 var startTime string
 var AsynNumFunc func() int
 
-func addServerInfo(addr string, list []string) {
-	defer serverInfoMutex.Unlock()
-	serverInfoMutex.Lock()
-	serverInfo[addr] = list
-	serverInfoTime[addr] = time.Now().Unix()
-}
-func delServerInfo(addr string) {
-	defer serverInfoMutex.Unlock()
-	serverInfoMutex.Lock()
-	delete(serverInfo, addr)
-	delete(serverInfoTime, addr)
-}
-
-func getServerInfo() (result []struct {
-	List []string
-	Addr string
-}) {
-	defer serverInfoMutex.Unlock()
-	serverInfoMutex.Lock()
-	for k, item := range serverInfo {
-		var resultItem struct {
-			List []string
-			Addr string
-		}
-		resultItem.List = item
-		resultItem.Addr = k
-		result = append(result, resultItem)
+func sysInfo() (result []string) {
+	m := runtime.MemStats{}
+	runtime.ReadMemStats(&m)
+	result = append(result, fmt.Sprint(m.Alloc/1024/1024))        //内存占用mb
+	result = append(result, fmt.Sprintf("%.3f", m.GCCPUFraction)) //gc cpu占用
+	result = append(result, fmt.Sprint(m.NumGC))                  //gc 次数
+	result = append(result, fmt.Sprint(rpc.CurrentCallNum()))     //当前 go 数量
+	result = append(result, startTime)                            //系统启动时间
+	if dbCountFunc != nil {
+		result = append(result, fmt.Sprint(dbCountFunc())) //数据库总连接数
+	} else {
+		result = append(result, "") //数据库总连接数
+	}
+	result = append(result, fmt.Sprint(helper.Log().QueueLen())) //日志待处理
+	if queueCountFunc != nil {
+		result = append(result, fmt.Sprint(queueCountFunc())) //队列待处理
+	} else {
+		result = append(result, "0") //队列待处理
 	}
 	return
 }
 
-func serverInfoTick(stop *bool) {
-	list := []string{}
-	timeoutUnxi := time.Now().Unix() - 80
-	serverInfoMutex.Lock()
-	for k, unix := range serverInfoTime {
-		if unix < timeoutUnxi {
-			list = append(list, k)
-		}
-	}
-	serverInfoMutex.Unlock()
-	for _, key := range list {
-		delServerInfo(key)
-	}
+func SetDbCountFunc(fun func() int) {
+	dbCountFunc = fun
+	return
 }
 
-func StartServerInfoCheck() {
-	lib.RunTickStopTimer(30000, serverInfoTick) //定时器检测超时daoinfo
+func SetQueueCountFunc(fun func() int) {
+	queueCountFunc = fun
+	return
 }
+
+var dbCountFunc func() int
+var queueCountFunc func() int

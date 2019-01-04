@@ -3,22 +3,24 @@ package dao
 import (
 	"errors"
 	"fmt"
+	"net/url"
+	"strings"
 	"sync"
 
 	"time"
 
-	"jryghq.cn/lib"
-	"jryghq.cn/utils"
+	"github.com/8treenet/gotree/helper"
+	"github.com/8treenet/gotree/lib"
 )
 
-var tp *lib.TaskPool
+var tp *lib.LimiteGo
 
-type Request func(request *utils.HTTPRequest)
+type Request func(request *helper.HTTPRequest)
 
 type DaoApi struct {
 	lib.Object
 	open    bool
-	daoName string
+	apiName string
 	host    string
 
 	dayMax     int
@@ -30,12 +32,10 @@ type DaoApi struct {
 	countMutex sync.Mutex
 }
 
-func (self *DaoApi) DaoApi(child interface{}) *DaoApi {
-	self.Object.Object(self)
+func (self *DaoApi) Gotree(child interface{}) *DaoApi {
+	self.Object.Gotree(self)
 	self.AddChild(self, child)
-	self.AddSubscribe("DaoTelnet", self.daoTelnet)
-	self.AddSubscribe("ApiOn", self.apiOn)
-	self.daoName = ""
+	self.apiName = ""
 
 	self.dayMax = 0
 	self.hourMax = 0
@@ -43,57 +43,35 @@ func (self *DaoApi) DaoApi(child interface{}) *DaoApi {
 	self.dayCount = 0
 	self.hourCount = 0
 	self.minCount = 0
+	self.apiOn()
 	return self
 }
 
 //TestOn 单元测试 开启
 func (self *DaoApi) TestOn() {
-	mode := utils.Config().String("sys::mode")
+	mode := helper.Config().String("sys::Mode")
 	if mode == "prod" {
-		utils.Log().WriteError("生产环境不可以使用单元测试api")
+		helper.Log().WriteError("生产环境不可以使用单元测试api")
 		panic("生产环境不可以使用单元测试api")
 	}
-	self.DaoInit()
 	self.apiOn()
 }
 
-//daoOn 开启回调
-func (self *DaoApi) daoTelnet(args ...interface{}) {
-	dao := self.TopChild().(daoName)
-	daoName := dao.Dao()
-
-	for _, arg := range args {
-		dao := arg.(daoNode)
-		if dao.Name == daoName {
-			self.apiOn()
-			b := utils.HttpGet(self.host)
-			req := b.SetTimeout(1*time.Second, 1*time.Second)
-			_, reqerr := req.Bytes()
-			if reqerr != nil {
-				utils.Log().WriteWarn("连接dao api:" + self.daoName + "失败, 错误原因:" + reqerr.Error())
-			}
-			return
-		}
-	}
+type apiName interface {
+	Api() string
 }
 
-//daoOn 开启回调
-func (self *DaoApi) apiOn(arg ...interface{}) {
-	if len(arg) > 0 {
-		daoName := arg[0].(string)
-		if daoName != self.daoName {
-			return
-		}
-	}
-
+//apiOn
+func (self *DaoApi) apiOn() {
 	self.open = true
-	self.host = utils.Config().String("api::" + self.daoName)
+	self.apiName = self.TopChild().(apiName).Api()
+	self.host = helper.Config().String("api::" + self.apiName)
 }
 
 //HttpGet
 func (self *DaoApi) HttpGet(apiAddr string, args map[string]interface{}, callback ...Request) (result []byte, e error) {
-	req := utils.HttpGet(self.host + apiAddr + "?" + utils.HttpBuildQuery(args))
-	req = req.SetTimeout(3*time.Second, 15*time.Second)
+	req := helper.HttpGet(self.host + apiAddr + "?" + httpBuildQuery(args))
+	req = req.SetTimeout(3*time.Second, 10*time.Second)
 	fun := func() error {
 		var reqerr error
 		result, reqerr = req.Bytes()
@@ -110,12 +88,12 @@ func (self *DaoApi) HttpGet(apiAddr string, args map[string]interface{}, callbac
 			return
 		}
 	}
-	mode := utils.Config().String("sys::mode")
-	//3次重试
-	for index := 0; index < 3; index++ {
-		e = tp.CallFunc(fun)
+	mode := helper.Config().String("sys::Mode")
+	//2次重试
+	for index := 0; index < 2; index++ {
+		e = tp.Go(fun)
 		if mode == "dev" {
-			utils.Log().WriteInfo("ApiGet:", self.host+apiAddr, "ReqData:", args, "ResData:", string(result), "error:", e)
+			helper.Log().WriteInfo("ApiGet:", self.host+apiAddr, "ReqData:", args, "ResData:", string(result), "error:", e)
 		}
 		if e != nil {
 			continue
@@ -129,8 +107,8 @@ func (self *DaoApi) HttpGet(apiAddr string, args map[string]interface{}, callbac
 
 //HttpPost
 func (self *DaoApi) HttpPost(apiAddr string, args map[string]interface{}, callback ...Request) (result []byte, e error) {
-	req := utils.HttpPost(self.host + apiAddr)
-	req = req.SetTimeout(3*time.Second, 15*time.Second)
+	req := helper.HttpPost(self.host + apiAddr)
+	req = req.SetTimeout(3*time.Second, 10*time.Second)
 	for k, v := range args {
 		req.Param(k, fmt.Sprint(v))
 	}
@@ -152,12 +130,12 @@ func (self *DaoApi) HttpPost(apiAddr string, args map[string]interface{}, callba
 		return reqerr
 	}
 
-	mode := utils.Config().String("sys::mode")
-	//3次重试
-	for index := 0; index < 3; index++ {
-		e = tp.CallFunc(fun)
+	mode := helper.Config().String("sys::Mode")
+	//2次重试
+	for index := 0; index < 2; index++ {
+		e = tp.Go(fun)
 		if mode == "dev" {
-			utils.Log().WriteInfo("ApiPost:", self.host+apiAddr, "ReqData:", args, "ResData:", string(result), "error:", e)
+			helper.Log().WriteInfo("ApiPost:", self.host+apiAddr, "ReqData:", args, "ResData:", string(result), "error:", e)
 		}
 		if e != nil {
 			continue
@@ -171,8 +149,8 @@ func (self *DaoApi) HttpPost(apiAddr string, args map[string]interface{}, callba
 
 //HttpPostJson
 func (self *DaoApi) HttpPostJson(apiAddr string, raw interface{}, callback ...Request) (result []byte, e error) {
-	req := utils.HttpPost(self.host + apiAddr)
-	req = req.SetTimeout(3*time.Second, 15*time.Second)
+	req := helper.HttpPost(self.host + apiAddr)
+	req = req.SetTimeout(3*time.Second, 10*time.Second)
 	req.JSONBody(raw)
 
 	if len(callback) > 0 {
@@ -192,12 +170,12 @@ func (self *DaoApi) HttpPostJson(apiAddr string, raw interface{}, callback ...Re
 		return reqerr
 	}
 
-	mode := utils.Config().String("sys::mode")
-	//3次重试
-	for index := 0; index < 3; index++ {
-		e = tp.CallFunc(fun)
+	mode := helper.Config().String("sys::Mode")
+	//2次重试
+	for index := 0; index < 2; index++ {
+		e = tp.Go(fun)
 		if mode == "dev" {
-			utils.Log().WriteInfo("ApiPostJson:", self.host+apiAddr, "ReqData:", raw, "ResData:", string(result), "error:", e)
+			helper.Log().WriteInfo("ApiPostJson:", self.host+apiAddr, "ReqData:", raw, "ResData:", string(result), "error:", e)
 		}
 		if e != nil {
 			continue
@@ -287,8 +265,12 @@ func (self *DaoApi) MinCountLimit(count int) {
 	})
 }
 
-func (self *DaoApi) DaoInit() {
-	if self.daoName == "" {
-		self.daoName = self.TopChild().(daoName).Dao()
+//HttpBuildQuery转换get参数
+func httpBuildQuery(args map[string]interface{}) string {
+	result := ""
+	for k, v := range args {
+		result += k + "=" + fmt.Sprint(v) + "&"
 	}
+
+	return url.PathEscape(strings.TrimSuffix(result, "&"))
 }

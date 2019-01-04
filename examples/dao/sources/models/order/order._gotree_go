@@ -1,0 +1,44 @@
+package order
+
+import (
+	"github.com/8treenet/gotree/dao"
+)
+
+// Product
+type Order struct {
+	dao.DaoModel
+}
+
+func init() {
+	dao.RegisterModel(new(Order).Gotree())
+}
+
+// Gotree
+func (self *Order) Gotree() *Order {
+	self.DaoModel.DaoModel(self)
+	return self
+}
+
+// Dao
+func (self *Order) Dao() string {
+	return "Order"
+}
+
+// Add 添加订单
+func (self *Order) Add(productId, userId int64) (orderId int64, e error) {
+	result, e := self.Conn().Raw("INSERT INTO `order` (`product_id`, `user_id`) VALUES(?,?)", productId, userId).Exec()
+	if e != nil {
+		return
+	}
+	orderId, e = result.LastInsertId()
+	return
+}
+
+// ListByUser 用户的订单列表
+func (self *Order) ListByUser(userId int64) (list []struct {
+	OrderId   int
+	ProductId int
+}, e error) {
+	_, e = self.Conn().Raw("SELECT id as OrderId, product_id FROM `order` where user_id = ?", userId).QueryRows(&list)
+	return
+}

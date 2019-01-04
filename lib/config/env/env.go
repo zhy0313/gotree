@@ -24,10 +24,10 @@ import (
 	"github.com/astaxie/beego/utils"
 )
 
-var env *utils.BeeMap
+var env *helper.BeeMap
 
 func init() {
-	env = utils.NewBeeMap()
+	env = helper.NewBeeMap()
 	for _, e := range os.Environ() {
 		splits := strings.Split(e, "=")
 		env.Set(splits[0], os.Getenv(splits[0]))

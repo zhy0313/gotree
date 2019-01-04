@@ -1,0 +1,60 @@
+package business_cmd
+
+import (
+	rc "github.com/8treenet/gotree/remote_call"
+)
+
+func init() {
+	//Store 加入熔断 条件:15秒内 %50超时, 60秒后恢复
+	rc.RegisterBreaker(new(Store), 15, 0.5, 60)
+}
+
+//productCmdBase
+type productCmdBase struct {
+	rc.RpcCmd
+}
+
+func (self *productCmdBase) Gotree(child ...interface{}) *productCmdBase {
+	self.RpcCmd.Gotree(self)
+	self.AddChild(self, child...)
+	return self
+}
+
+// Control
+func (self *productCmdBase) Control() string {
+	return "Product"
+}
+
+// Shopping 购买商品
+type Shopping struct {
+	productCmdBase //继承productCmdBase
+	UserId         int64
+	ProductId      int64
+}
+
+func (self *Shopping) Gotree(userId int64, productId int64) *Shopping {
+	self.productCmdBase.Gotree(self)
+	self.UserId = userId
+	self.ProductId = productId
+	return self
+}
+
+func (self *Shopping) Action() string {
+	return "Shopping"
+}
+
+// Store 获取商品列表
+type Store struct {
+	productCmdBase //继承productCmdBase
+	Ids            []int64
+}
+
+func (self *Store) Gotree(ids []int64) *Store {
+	self.productCmdBase.Gotree(self)
+	self.Ids = ids
+	return self
+}
+
+func (self *Store) Action() string {
+	return "Store"
+}

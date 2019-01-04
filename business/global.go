@@ -4,10 +4,10 @@ import (
 	"strings"
 	"time"
 
-	"jryghq.cn/lib"
-	"jryghq.cn/lib/rpc"
-	"jryghq.cn/remote_call"
-	"jryghq.cn/utils"
+	"github.com/8treenet/gotree/helper"
+	"github.com/8treenet/gotree/lib"
+	"github.com/8treenet/gotree/lib/rpc"
+	"github.com/8treenet/gotree/remote_call"
 )
 
 var _scl *lib.ServiceLocator //业务服务定位器
@@ -16,23 +16,24 @@ var _tsl *lib.ServiceLocator //定时业务
 var _timer []string
 
 func init() {
-	utils.LoadConfig("business")
+	helper.LoadConfig("business")
 	logOn()
 	appStart()
-	_scl = new(lib.ServiceLocator).ServiceLocator()
-	_ssl = new(lib.ServiceLocator).ServiceLocator()
-	_tsl = new(lib.ServiceLocator).ServiceLocator()
+	_scl = new(lib.ServiceLocator).Gotree()
+	_ssl = new(lib.ServiceLocator).Gotree()
+	_tsl = new(lib.ServiceLocator).Gotree()
 
 	concurrency := concurrency()
 	//注册相关组件
-	_ssl.AddComponent(new(remote_call.InnerMaster).InnerMaster())
-	innerRpcServer := new(remote_call.InnerServerController).InnerServerController()
-	client := new(remote_call.RpcClient).RpcClient(concurrency, retry())
-	client.RecoverLog()
+	_ssl.AddComponent(new(remote_call.InnerMaster).Gotree())
+	innerRpcServer := new(remote_call.InnerServerController).Gotree()
+	client := new(remote_call.RpcClient).Gotree(concurrency, helper.Config().DefaultInt("sys::CallDaoTimeout", 12))
 	_ssl.AddComponent(client)
-	_ssl.AddComponent(new(remote_call.RpcQps).RpcQps())
+	_ssl.AddComponent(new(remote_call.RpcQps).Gotree())
+	_ssl.AddComponent(new(remote_call.RpcBreak).Gotree())
 	remote_call.RpcServerRegister(innerRpcServer)
 	_timer = []string{}
+	helper.SetGoDict(rpc.GoDict())
 	lib.SetGoDict(rpc.GoDict())
 	remote_call.AsynNumFunc = AsyncNum
 }
@@ -70,25 +71,29 @@ func Run(args ...interface{}) {
 	timerOn()
 	var bindAddr string
 	if len(args) == 0 {
-		bindAddr = utils.Config().String("BindAddr")
+		bindAddr = helper.Config().String("BindAddr")
 	}
-	remote_call.StartServerInfoCheck()
+
 	//通知所有定时服务
 	_tsl.NotitySubscribe("TimerOn", timerServices()...)
-	utils.Log().WriteInfo("jryg business run ....")
+	helper.Log().WriteInfo("business run ....")
 	var client *remote_call.RpcClient
+	var breaker *remote_call.RpcBreak
 	_ssl.GetComponent(&client)
+	_ssl.GetComponent(&breaker)
 	_scl.NotitySubscribe("startup")
+	breaker.RunTick()
 	rpcSer := remote_call.RpcServerRun(bindAddr)
 	_scl.NotitySubscribe("shutdown")
-	utils.Log().WriteInfo("jryg business close...")
+	helper.Log().WriteInfo("business close...")
+	breaker.StopTick()
 	//优雅关闭
 	for index := 0; index < 30; index++ {
 		//当前rpc数量, 天定时器, 异步数量
 		num := rpc.CurrentCallNum()
 		timenum := lib.CurrentTimeNum()
 		anum := AsyncNum()
-		utils.Log().WriteInfo("jryg business close: 定时服务剩余:", timenum, "请求服务剩余:", num, "异步服务剩余:", anum)
+		helper.Log().WriteInfo("business close: 定时服务剩余:", timenum, "请求服务剩余:", num, "异步服务剩余:", anum)
 		if num <= 0 && anum <= 0 && timenum <= 0 {
 			break
 		}
@@ -96,8 +101,8 @@ func Run(args ...interface{}) {
 	}
 	rpcSer.Close()
 	client.Close()
-	utils.Log().WriteInfo("jryg business close: success")
-	utils.Log().Close()
+	helper.Log().WriteInfo("business close: success")
+	helper.Log().Close()
 }
 
 func timerServices() (list []interface{}) {
@@ -108,19 +113,19 @@ func timerServices() (list []interface{}) {
 }
 
 func logOn() {
-	mode := utils.Config().String("sys::mode")
+	mode := helper.Config().String("sys::Mode")
 	if mode != "prod" {
 		//如果是测试当前目录创建日志文件 并开启fmt.print
-		utils.Log().Debug()
+		helper.Log().Debug()
 	}
-	dir := utils.Config().DefaultString("sys::LogDir", "log")
+	dir := helper.Config().DefaultString("sys::LogDir", "log")
 	//生产环境定位 ~/log/xx目录
-	utils.Log().Init(dir, rpc.GoDict())
+	helper.Log().Init(dir, rpc.GoDict())
 }
 
 //读取配置文件启动定时 service服务
 func timerOn() {
-	serList := strings.Split(utils.Config().String("TimerOn"), ",")
+	serList := strings.Split(helper.Config().String("TimerOn"), ",")
 	for _, ser := range serList {
 		_timer = append(_timer, ser)
 	}
@@ -128,11 +133,6 @@ func timerOn() {
 
 func concurrency() (concurrency int) {
 	//读取最大调用dao并发数量
-	concurrency = utils.Config().DefaultInt("sys::CallDaoConcurrency", 128)
-	return
-}
-
-func retry() (retry int) {
-	retry = utils.Config().DefaultInt("sys::CallDaoRetry", 5)
+	concurrency = helper.Config().DefaultInt("sys::CallDaoConcurrency", 8192)
 	return
 }

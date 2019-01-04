@@ -1,0 +1,87 @@
+package dao_cmd
+
+import (
+	rc "github.com/8treenet/gotree/remote_call"
+)
+
+func init() {
+	//ProductGetList加入熔断 条件:15秒内 %50超时, 60秒后恢复
+	rc.RegisterBreaker(new(ProductGetList), 15, 0.5, 60)
+}
+
+//productCmdBase
+type productCmdBase struct {
+	rc.RpcCmd
+}
+
+func (self *productCmdBase) Gotree(child ...interface{}) *productCmdBase {
+	self.RpcCmd.Gotree(self)
+	self.AddChild(self, child...)
+	return self
+}
+
+// Control
+func (self *productCmdBase) Control() string {
+	return "Product"
+}
+
+// DaoAddr 访问ip地址
+func (self *productCmdBase) DaoAddr(rn rc.RpcNode) string {
+	//rn.RandomRpcAddr() 随机节点访问
+	//rn.BalanceRpcAddr() 负载均衡节点访问
+	//rn.DummyHashRpcAddr(123) 一致性哈希节点访问
+	//rn.AllNode() 获取全部节点,自定义方式访问
+	//rn.SlaveRpcAddr()  //返回随机从节点  主节点:节点id=1,当只有主节点返回主节点
+	//rn.MasterRpcAddr() //返回主节点 主节点:节点id=1
+	return rn.RandomRpcAddr()
+}
+
+// ProductAdd 增加商品
+type ProductAdd struct {
+	productCmdBase //继承productCmdBase
+	Desc           string
+	Price          int64
+}
+
+func (self *ProductAdd) Gotree(desc string, price int64) *ProductAdd {
+	self.productCmdBase.Gotree(self)
+	self.Desc = desc
+	self.Price = price
+	return self
+}
+
+func (self *ProductAdd) Action() string {
+	return "Add"
+}
+
+// ProductGet 获取商品
+type ProductGet struct {
+	productCmdBase //继承productCmdBase
+	Id             int64
+}
+
+func (self *ProductGet) Gotree(id int64) *ProductGet {
+	self.productCmdBase.Gotree(self)
+	self.Id = id
+	return self
+}
+
+func (self *ProductGet) Action() string {
+	return "Get"
+}
+
+// ProductGetList 获取商品列表
+type ProductGetList struct {
+	productCmdBase //继承productCmdBase
+	Ids            []int64
+}
+
+func (self *ProductGetList) Gotree(ids []int64) *ProductGetList {
+	self.productCmdBase.Gotree(self)
+	self.Ids = ids
+	return self
+}
+
+func (self *ProductGetList) Action() string {
+	return "GetList"
+}

@@ -1,0 +1,69 @@
+package controllers
+
+import (
+	"examples/business/service"
+	"examples/protocol/business_cmd"
+	"examples/protocol/business_value"
+	"fmt"
+
+	"github.com/8treenet/gotree/business"
+	"github.com/8treenet/gotree/helper"
+)
+
+type ProductController struct {
+	business.BusinessController
+}
+
+func init() {
+	business.RegisterController(new(ProductController).Gotree())
+}
+
+//Gotree
+func (self *ProductController) Gotree() *ProductController {
+	self.BusinessController.Gotree(self)
+	return self
+}
+
+//Prepare
+func (self *ProductController) Prepare(method string, argv interface{}) {
+	self.BusinessController.Prepare(method, argv)
+	helper.Log().WriteInfo("Prepare:", method, argv)
+}
+
+//Finish
+func (self *ProductController) Finish(method string, reply interface{}, e error) {
+	self.BusinessController.Finish(method, reply, e)
+	helper.Log().WriteInfo("Finish:", method, fmt.Sprint(reply), e)
+}
+
+// Store 商品列表
+func (self *ProductController) Store(cmd business_cmd.Store, result *business_value.Store) (e error) {
+	var (
+		productSer *service.Product
+	)
+	*result = business_value.Store{}
+
+	self.Service(&productSer)
+	result.List, e = productSer.Store()
+	return
+}
+
+// Shopping 商品列表
+func (self *ProductController) Shopping(cmd business_cmd.Shopping, result *business_value.Shopping) (e error) {
+	var (
+		productSer *service.Product
+	)
+	*result = business_value.Shopping{}
+
+	self.Service(&productSer)
+	shortage, e := productSer.Shopping(cmd.UserId, cmd.ProductId)
+	if e != nil {
+		return
+	}
+	if shortage {
+		result.Info = "余额不足"
+	} else {
+		result.Info = "ok"
+	}
+	return
+}

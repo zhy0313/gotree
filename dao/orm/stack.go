@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"jryghq.cn/lib/g"
+	"github.com/8treenet/gotree/lib/g"
 )
 
 var stackOrm map[string]Ormer

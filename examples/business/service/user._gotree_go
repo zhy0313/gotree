@@ -1,0 +1,78 @@
+package service
+
+import (
+	"examples/protocol/dao_cmd"
+	"examples/protocol/dao_value"
+
+	"github.com/8treenet/gotree/helper"
+
+	"github.com/8treenet/gotree/business"
+)
+
+func init() {
+	business.RegisterService(new(User).Gotree())
+}
+
+type User struct {
+	business.BusinessService
+}
+
+//Gotree
+func (self *User) Gotree() *User {
+	self.BusinessService.Gotree(self)
+	return self
+}
+
+// Register 注册
+func (self *User) Register(userName string) (userId int64, e error) {
+	cmdAdd := new(dao_cmd.UserAdd).Gotree(userName, 10000000)
+	user := dao_value.UserAdd{}
+	e = self.CallDao(cmdAdd, &user)
+	if e != nil {
+		return
+	}
+	userId = user.UserId
+	return
+}
+
+// Order 用户订单
+func (self *User) Order(userId int64) (result []struct {
+	OrderId     int64
+	ProductId   int64
+	ProductDesc string
+	Price       int64
+}, e error) {
+	//获取用户订单列表
+	cmdOrder := new(dao_cmd.OrderList).Gotree(userId)
+	orders := dao_value.OrderList{}
+	e = self.CallDao(cmdOrder, &orders)
+	if e != nil {
+		return
+	}
+	if len(orders.List) <= 0 {
+		return
+	}
+
+	//通过订单商品id 查商品信息
+	cmdPt := new(dao_cmd.ProductGetList).Gotree(orders.ProductIds())
+	pt := dao_value.ProductGetList{}
+	e = self.CallDao(cmdPt, &pt)
+	if e != nil {
+		return
+	}
+
+	m := pt.Map()
+	//组装订单和商品数据
+	helper.NewSlice(&result, len(orders.List))
+	for index := 0; index < len(result); index++ {
+		result[index].OrderId = orders.List[index].OrderId
+		result[index].ProductId = orders.List[index].ProductId
+		item, ok := m[result[index].ProductId]
+		if !ok {
+			continue
+		}
+		result[index].Price = item.Price
+		result[index].ProductDesc = item.Desc
+	}
+	return
+}

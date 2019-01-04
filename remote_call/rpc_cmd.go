@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"jryghq.cn/lib"
-	"jryghq.cn/lib/rpc"
+	"github.com/8treenet/gotree/lib"
+	"github.com/8treenet/gotree/lib/rpc"
 )
 
 type RpcHeader struct {
@@ -33,43 +33,33 @@ func (self *RpcHeader) Get(src, key string) string {
 	return ""
 }
 
-type RpcHeadCmd struct {
-	RpcCmd
-	Head string `opt:"empty"`
+type RpcCmd struct {
+	lib.Object
+	Bseq          string `opt:"empty"`
+	Head          string `opt:"empty"`
+	cacheIdentity interface{}
 }
 
-func (self *RpcHeadCmd) RpcHeadCmd(child interface{}) *RpcHeadCmd {
-	self.Object.Object(self)
-	self.AddChild(self, child)
-	return self
-}
-
-func (self *RpcHeadCmd) Header(k string) string {
+func (self *RpcCmd) Header(k string) string {
 	return _header.Get(self.Head, k)
 }
 
-func (self *RpcHeadCmd) SetHeader(k string, v string) {
+func (self *RpcCmd) SetHeader(k string, v string) {
 	_, e := self.GetChild(self)
 	if e != nil {
-		panic("RpcHeadCmd :header是只读数据")
+		panic("RpcCmd :header是只读数据")
 	}
 	self.Head = _header.Set(self.Head, k, v)
 }
 
-func (self *RpcHeadCmd) SetHttpHeader(head http.Header) {
+func (self *RpcCmd) SetHttpHeader(head http.Header) {
 	_, e := self.GetChild(self)
 	if e != nil {
-		panic("RpcHeadCmd :header是只读数据")
+		panic("RpcCmd :header是只读数据")
 	}
 	for item := range head {
 		self.SetHeader(item, head.Get(item))
 	}
-}
-
-type RpcCmd struct {
-	lib.Object
-	Bseq          string `opt:"empty"`
-	cacheIdentity interface{}
 }
 
 type RpcNode interface {
@@ -97,8 +87,8 @@ type nodeAddr interface {
 	GetAddrList(string) *nodeManage //传入远程服务名称, 获取服务Addr列表
 }
 
-func (self *RpcCmd) RpcCmd(child interface{}) *RpcCmd {
-	self.Object.Object(self)
+func (self *RpcCmd) Gotree(child interface{}) *RpcCmd {
+	self.Object.Gotree(self)
 	self.AddChild(self, child)
 	bseq := rpc.GoDict().Get("bseq")
 	if bseq == nil {

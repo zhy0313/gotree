@@ -3,8 +3,9 @@ package lib
 import (
 	"errors"
 	"fmt"
-	"jryghq.cn/lib/g"
 	"sync"
+
+	"github.com/8treenet/gotree/lib/g"
 )
 
 type GoDict struct {
@@ -12,7 +13,7 @@ type GoDict struct {
 	mutex *sync.Mutex
 }
 
-func (self *GoDict) GoDict() *GoDict {
+func (self *GoDict) Gotree() *GoDict {
 	self.m = make(map[string]*Dict)
 	self.mutex = new(sync.Mutex)
 	return self
@@ -25,7 +26,7 @@ func (self *GoDict) Set(key string, value interface{}) {
 
 	dict, ok := self.m[id]
 	if !ok {
-		dict = new(Dict).Dict()
+		dict = new(Dict).Gotree()
 		self.m[id] = dict
 	}
 	dict.Set(key, value)

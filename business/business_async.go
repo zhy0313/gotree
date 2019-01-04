@@ -6,9 +6,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"jryghq.cn/lib"
-	"jryghq.cn/lib/rpc"
-	"jryghq.cn/utils"
+	"github.com/8treenet/gotree/helper"
+	"github.com/8treenet/gotree/lib"
+	"github.com/8treenet/gotree/lib/rpc"
 )
 
 type AsyncController interface {
@@ -26,8 +26,8 @@ type async struct {
 }
 
 //Async 异步执行
-func (self *async) async(run func(ac AsyncController), completef func()) *async {
-	self.Object.Object(self)
+func (self *async) Gotree(run func(ac AsyncController), completef func()) *async {
+	self.Object.Gotree(self)
 	self.run = run
 	self.completef = completef
 	self.AddSubscribe("shutdown", self.shutdown)
@@ -60,7 +60,6 @@ func (self *async) Sleep(millisecond int64) {
 
 		select {
 		case _ = <-self.exit:
-			atomic.AddInt32(&asyncNum, -1)
 			if self.completef != nil {
 				self.completef()
 			}
@@ -88,14 +87,9 @@ var asyncNum int32 = 0
 //Async 异步执行
 func (self *async) execute() {
 	atomic.AddInt32(&asyncNum, 1)
-	callCompletef := false
 	defer func() {
 		if perr := recover(); perr != nil {
-			if !callCompletef && self.completef != nil {
-				//未执行Complete 并且Complete不为空
-				self.completef()
-			}
-			utils.Log().WriteError(perr)
+			helper.Log().WriteError(perr)
 		}
 		atomic.AddInt32(&asyncNum, -1)
 		if self.bseq != "" {
@@ -110,8 +104,8 @@ func (self *async) execute() {
 
 	self.run(self)
 	if self.completef != nil {
-		callCompletef = true
 		self.completef()
+		self.completef = nil
 	}
 }
 

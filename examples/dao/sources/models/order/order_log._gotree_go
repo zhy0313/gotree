@@ -1,0 +1,31 @@
+package order
+
+import (
+	"github.com/8treenet/gotree/dao"
+)
+
+// OrderLog
+type OrderLog struct {
+	dao.DaoModel
+}
+
+func init() {
+	dao.RegisterModel(new(OrderLog).Gotree())
+}
+
+// Gotree
+func (self *OrderLog) Gotree() *OrderLog {
+	self.DaoModel.DaoModel(self)
+	return self
+}
+
+// Dao
+func (self *OrderLog) Dao() string {
+	return "Order"
+}
+
+// Add 添加订单日志
+func (self *OrderLog) Add(orderId int64, desc string) (e error) {
+	_, e = self.Conn().Raw("INSERT INTO `order_log` (`order_id`, `desc`) VALUES(?,?)", orderId, desc).Exec()
+	return
+}

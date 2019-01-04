@@ -18,10 +18,10 @@ type Object struct {
 }
 
 //初始化
-func (self *Object) Object(child interface{}) *Object {
+func (self *Object) Gotree(child interface{}) *Object {
 	self.child = make(map[interface{}]interface{})
 	self.AddChild(self, child)
-	self.component = new(Components).Components()
+	self.component = new(Components).Gotree()
 	return self
 }
 
@@ -57,7 +57,7 @@ func (self *Object) AddSubscribe(event string, handle handlerFunc) {
 		ob.AddSubscribe(self, handle)
 		return
 	}
-	ob = new(ObServer).ObServer()
+	ob = new(ObServer).Gotree()
 	ob.AddSubscribe(self, handle)
 	globalObserver[event] = ob
 }

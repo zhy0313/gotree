@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	rpc "jryghq.cn/lib/rpc"
+	rpc "github.com/8treenet/gotree/lib/rpc"
 	"net"
 	"sync"
 )

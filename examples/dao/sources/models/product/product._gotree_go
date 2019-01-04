@@ -1,0 +1,63 @@
+package product
+
+import (
+	"fmt"
+
+	"github.com/8treenet/gotree/dao"
+	"github.com/8treenet/gotree/dao/orm"
+	"github.com/8treenet/gotree/helper"
+)
+
+// Product
+type Product struct {
+	dao.DaoModel
+}
+
+func init() {
+	dao.RegisterModel(new(Product).Gotree())
+}
+
+// Gotree
+func (self *Product) Gotree() *Product {
+	self.DaoModel.DaoModel(self)
+	return self
+}
+
+// Dao
+func (self *Product) Dao() string {
+	return "Product"
+}
+
+// Add 添加商品
+func (self *Product) Add(desc string, price int64) (uid int64, e error) {
+	result, e := self.Conn().Raw("INSERT INTO `product` (`price`, `desc`) VALUES(?,?)", price, desc).Exec()
+	if e != nil {
+		return
+	}
+	uid, e = result.LastInsertId()
+	return
+}
+
+// Get 获取商品
+func (self *Product) Get(id int64) (product struct {
+	Id    int64
+	Price int64
+	Desc  string
+}, e error) {
+	e = self.Conn().Raw("SELECT id,price,`desc` FROM `product` where id = ?", id).QueryRow(&product)
+	if e == orm.ErrNoRows {
+		helper.Log().WriteInfo("ErrNoRows")
+	}
+	return
+}
+
+// Gets 商品列表 in示例
+func (self *Product) Gets(productId []int64) (list []struct {
+	Id    int64
+	Price int64
+	Desc  string
+}, e error) {
+	sql := fmt.Sprintf("SELECT id,price,`desc` FROM `product` where id in(%s)", self.FormatPlaceholder(productId))
+	_, e = self.Conn().Raw(sql, self.FormatArray(productId)...).QueryRows(&list)
+	return
+}

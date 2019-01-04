@@ -1,0 +1,76 @@
+package cache
+
+import (
+	"encoding/json"
+
+	"github.com/garyburd/redigo/redis"
+
+	"github.com/8treenet/gotree/dao"
+)
+
+/*
+	readme!!!!!!!readme!!!!!!!readme!!!!!!!readme!!!!!!!readme!!!!!!!
+
+	redis通信调用已包含在DaoCache.Do里。
+	裸用redis难以维护，推荐再次封装。 如处理json、key、公司内部规范读写、等。 按gotree继承结构，在cache目录下建立cache_base.go
+	type CacheBase struct {
+		dao.DaoCache //CacheBase
+	}
+
+	func (self *CacheBase) Gotree(child ...interface{}) *CacheBase {
+		self.DaoCache.Gotree
+		self.AddChild(self, child...)
+		return self
+	}
+
+	//提供给业务子类的调用处理
+	func (self *CacheBase) XXXXX() {
+		self.Do()
+	}
+*/
+
+//TestCache
+type Course struct {
+	dao.DaoCache //或继承再次封装的CacheBase
+	Id           string
+	Exp          int64
+}
+
+func init() {
+	dao.RegisterCache(new(Course).Gotree())
+}
+
+//Course
+func (self *Course) Gotree() *Course {
+	self.DaoCache.Gotree(self)
+	return self
+}
+
+//Dao
+func (self *Course) Dao() string {
+	return "Feature"
+}
+
+func (self *Course) TestSet(i int, s string) {
+	var data struct {
+		CourseInt    int
+		CourseString string
+	}
+	data.CourseInt = i
+	data.CourseString = s
+	byteData, _ := json.Marshal(data)
+	self.Do("SET", "Feature", string(byteData))
+}
+
+func (self *Course) TestGet() (result struct {
+	CourseInt    int
+	CourseString string
+}, exists bool) {
+
+	strData, err := redis.Bytes(self.Do("GET", "Feature"))
+	if err != nil {
+		return
+	}
+	json.Unmarshal(strData, &result)
+	return
+}

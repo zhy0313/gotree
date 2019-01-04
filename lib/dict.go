@@ -29,7 +29,7 @@ type Dict struct {
 	heap map[interface{}]interface{}
 }
 
-func (self *Dict) Dict() *Dict {
+func (self *Dict) Gotree() *Dict {
 	self.heap = make(map[interface{}]interface{})
 	return self
 }

@@ -1,0 +1,53 @@
+package business_cmd
+
+import (
+	rc "github.com/8treenet/gotree/remote_call"
+)
+
+//userCmdBase
+type userCmdBase struct {
+	rc.RpcCmd
+}
+
+func (self *userCmdBase) Gotree(child ...interface{}) *userCmdBase {
+	self.RpcCmd.Gotree(self)
+	self.AddChild(self, child...)
+	return self
+}
+
+// Control
+func (self *userCmdBase) Control() string {
+	return "User"
+}
+
+// UserRegister 注册
+type UserRegister struct {
+	userCmdBase //继承UserCmd
+	UserName    string
+}
+
+func (self *UserRegister) Gotree(uname string) *UserRegister {
+	self.userCmdBase.Gotree(self)
+	self.UserName = uname
+	return self
+}
+
+func (self *UserRegister) Action() string {
+	return "Register"
+}
+
+// UserOrder 订单列表
+type UserOrder struct {
+	userCmdBase //继承UserCmd
+	UserId      int64
+}
+
+func (self *UserOrder) Gotree(uid int64) *UserOrder {
+	self.userCmdBase.Gotree(self)
+	self.UserId = uid
+	return self
+}
+
+func (self *UserOrder) Action() string {
+	return "Order"
+}

@@ -19,7 +19,7 @@
 //
 //	import (
 //		"fmt"
-//		"jryghq.cn/orm"
+//		"github.com/8treenet/gotree/orm"
 //		_ "github.com/go-sql-driver/mysql" // import your used driver
 //	)
 //

@@ -1,0 +1,12 @@
+package main
+
+import (
+	_ "examples/business/controllers"
+	_ "examples/business/timer"
+
+	"github.com/8treenet/gotree/business"
+)
+
+func main() {
+	business.Run()
+}

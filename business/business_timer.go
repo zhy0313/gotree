@@ -1,8 +1,12 @@
 package business
 
 import (
-	"jryghq.cn/lib"
-	"jryghq.cn/utils"
+	"reflect"
+	"runtime"
+	"strings"
+
+	"github.com/8treenet/gotree/helper"
+	"github.com/8treenet/gotree/lib"
 )
 
 type BusinessTimer struct {
@@ -12,8 +16,8 @@ type BusinessTimer struct {
 	_openService  bool
 }
 
-func (self *BusinessTimer) BusinessTimer(child interface{}) *BusinessTimer {
-	self.Object.Object(self)
+func (self *BusinessTimer) Gotree(child interface{}) *BusinessTimer {
+	self.Object.Gotree(self)
 	self.AddChild(self, child)
 	self.timerCallBack = make([]trigger, 0)
 	self.AddSubscribe("TimerOn", self.timer)
@@ -36,11 +40,11 @@ func (self *BusinessTimer) RegisterTickTrigger(ms int, fun func(), delay ...int)
 //RegisterDayTrigger 注册每天小时 触发器 hour:0 - 23, minute :0 - 59
 func (self *BusinessTimer) RegisterDayTrigger(hour, minute int, fun func()) {
 	if hour < 0 && hour > 23 {
-		utils.Log().WriteError("hour:0 - 23")
+		helper.Log().WriteError("hour:0 - 23")
 	}
 
 	if minute < 0 && minute > 59 {
-		utils.Log().WriteError("minute :0 - 59")
+		helper.Log().WriteError("minute :0 - 59")
 	}
 	self.timerCallBack = append(self.timerCallBack, trigger{t: hour, t2: minute, dayFun: fun})
 	return
@@ -56,7 +60,7 @@ func (self *BusinessTimer) stopTick(args ...interface{}) {
 func (self *BusinessTimer) Service(child interface{}) {
 	err := _scl.Service(child)
 	if err != nil {
-		utils.Log().WriteError("飞哥:不要乱调用:" + err.Error())
+		helper.Log().WriteError("飞哥:不要乱调用:" + err.Error())
 		panic("飞哥:不要乱调用:" + err.Error())
 	}
 	return
@@ -80,12 +84,29 @@ func (self *BusinessTimer) timer(args ...interface{}) {
 	}
 	for _, fun := range self.timerCallBack {
 		if fun.tickFun != nil {
-			tick := lib.RunTick(int64(fun.t), fun.tickFun, selfName, fun.delay)
+			funName := selfName + "."
+			funcFor := runtime.FuncForPC(reflect.ValueOf(fun.tickFun).Pointer()).Name()
+			if list := strings.Split(funcFor, "."); len(list) > 0 {
+				funName += list[len(list)-1]
+			}
+			if list := strings.Split(funName, "-"); len(list) > 0 {
+				funName = list[0]
+			}
+
+			tick := lib.RunTick(int64(fun.t), fun.tickFun, funName, fun.delay)
 			self.timerStopTick = append(self.timerStopTick, tick)
 		}
 
 		if fun.dayFun != nil {
-			lib.RunDay(fun.t, fun.t2, fun.dayFun, selfName)
+			funName := selfName + "."
+			funcFor := runtime.FuncForPC(reflect.ValueOf(fun.dayFun).Pointer()).Name()
+			if list := strings.Split(funcFor, "."); len(list) > 0 {
+				funName += list[len(list)-1]
+			}
+			if list := strings.Split(funName, "-"); len(list) > 0 {
+				funName = list[0]
+			}
+			lib.RunDay(fun.t, fun.t2, fun.dayFun, funName)
 		}
 	}
 	return
@@ -94,7 +115,7 @@ func (self *BusinessTimer) timer(args ...interface{}) {
 func (self *BusinessTimer) OpenTimer() {
 	exist := _tsl.CheckService(self.TopChild())
 	if exist {
-		utils.Log().WriteError("禁止重复实例化")
+		helper.Log().WriteError("禁止重复实例化")
 		panic("禁止重复实例化")
 	}
 	self._openService = true
@@ -107,14 +128,14 @@ func (self *BusinessTimer) Async(run func(ac AsyncController), completeds ...fun
 	if len(completeds) > 0 {
 		completed = completeds[0]
 	}
-	ac := new(async).async(run, completed)
+	ac := new(async).Gotree(run, completed)
 	go ac.execute()
 }
 
 // Broadcast 调用所有注册service的method方法. 潜龙勿用,会使项目非常难以维护
 func (self *BusinessTimer) Broadcast(method string, arg interface{}) {
 	if e := _scl.Broadcast(method, arg); e != nil {
-		utils.Log().WriteError("Buesiness ServiceBroadcast errror:" + e.Error())
+		helper.Log().WriteError("Buesiness ServiceBroadcast errror:" + e.Error())
 	}
 }
 

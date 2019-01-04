@@ -1,0 +1,80 @@
+package controllers
+
+import (
+	"examples/protocol/dao_cmd"
+	"examples/protocol/dao_value"
+	"fmt"
+
+	"examples/dao/sources/models/product"
+
+	"github.com/8treenet/gotree/dao"
+	"github.com/8treenet/gotree/helper"
+)
+
+type ProductController struct {
+	dao.DaoController
+}
+
+func init() {
+	dao.RegisterController(new(ProductController).Gotree())
+}
+
+//Gotree
+func (self *ProductController) Gotree() *ProductController {
+	self.DaoController.Gotree(self)
+	return self
+}
+
+//Prepare
+func (self *ProductController) Prepare(method string, argv interface{}) {
+	helper.Log().WriteInfo("Prepare:", method, argv)
+}
+
+//Finish
+func (self *ProductController) Finish(method string, reply interface{}, e error) {
+	helper.Log().WriteInfo("Finish:", method, fmt.Sprint(reply), e)
+}
+
+// Add 添加商品
+func (self *ProductController) Add(cmd dao_cmd.ProductAdd, result *helper.VoidValue) (e error) {
+	var (
+		mProduct *product.Product
+	)
+	*result = helper.VoidValue{}
+	self.Model(&mProduct)
+	_, e = mProduct.Add(cmd.Desc, cmd.Price)
+	return
+}
+
+// Add 添加商品
+func (self *ProductController) Get(cmd dao_cmd.ProductGet, result *dao_value.ProductGet) (e error) {
+	var (
+		mProduct *product.Product
+	)
+	*result = dao_value.ProductGet{}
+	self.Model(&mProduct)
+	pt, e := mProduct.Get(cmd.Id)
+	if e != nil {
+		return
+	}
+
+	result.Id = pt.Id
+	result.Price = pt.Price
+	result.Desc = pt.Desc
+	return
+}
+
+// Add 添加商品
+func (self *ProductController) GetList(cmd dao_cmd.ProductGetList, result *dao_value.ProductGetList) (e error) {
+	var (
+		mProduct *product.Product
+	)
+	*result = dao_value.ProductGetList{}
+	self.Model(&mProduct)
+	pts, e := mProduct.Gets(cmd.Ids)
+	if e != nil {
+		return
+	}
+	helper.Memcpy(&result.List, pts)
+	return
+}

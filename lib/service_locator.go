@@ -4,7 +4,7 @@ import (
 	"errors"
 	"reflect"
 
-	"jryghq.cn/utils"
+	"github.com/8treenet/gotree/helper"
 )
 
 //服务定位器
@@ -13,9 +13,9 @@ type ServiceLocator struct {
 	dict *Dict
 }
 
-func (self *ServiceLocator) ServiceLocator() *ServiceLocator {
-	self.Object.Object(self)
-	self.dict = new(Dict).Dict()
+func (self *ServiceLocator) Gotree() *ServiceLocator {
+	self.Object.Gotree(self)
+	self.dict = new(Dict).Gotree()
 	return self
 }
 
@@ -27,7 +27,7 @@ func (self *ServiceLocator) CheckService(com interface{}) bool {
 func (self *ServiceLocator) AddService(obj interface{}) {
 	t := reflect.TypeOf(obj)
 	if t.Kind() != reflect.Ptr {
-		utils.Log().WriteError("AddComponent != reflect.Ptr")
+		helper.Log().WriteError("AddComponent != reflect.Ptr")
 	}
 	self.dict.Set(t.Elem().Name(), obj)
 }

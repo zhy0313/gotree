@@ -11,16 +11,16 @@ import (
 	"sync/atomic"
 	"syscall"
 
-	"jryghq.cn/lib"
-	rpc "jryghq.cn/lib/rpc"
-	jsonrpc "jryghq.cn/lib/rpc/jsonrpc"
-	"jryghq.cn/utils"
+	"github.com/8treenet/gotree/helper"
+	"github.com/8treenet/gotree/lib"
+	rpc "github.com/8treenet/gotree/lib/rpc"
+	jsonrpc "github.com/8treenet/gotree/lib/rpc/jsonrpc"
 )
 
 var rs *rpcServer
 
 func init() {
-	rs = new(rpcServer).rpcServer()
+	rs = new(rpcServer).Gotree()
 }
 
 //启动rpc服务 args[0] = string(x.x.x.x:2321)
@@ -44,12 +44,12 @@ func RpcServerRun(args ...interface{}) *rpcServer {
 		var err error
 		rs.socket, err = net.Listen("tcp", fmt.Sprintf("%s:%d", ip, port+index))
 		if err != nil && index == 9 {
-			utils.Log().WriteError(err.Error())
+			helper.Log().WriteError(err.Error())
 			panic(err.Error())
 		}
 		if err == nil {
 			port += index
-			utils.Log().WriteInfo("rpc server bind addr:" + fmt.Sprintf("%s:%d", ip, port))
+			helper.Log().WriteInfo("rpc server bind addr:" + fmt.Sprintf("%s:%d", ip, port))
 			break
 		}
 	}
@@ -73,7 +73,7 @@ func RpcServerRegister(controller interface{}) {
 
 	rc, ok := controller.(rpcname)
 	if !ok {
-		utils.Log().WriteError("RpcServerRegister 注册失败:" + reflect.TypeOf(controller).String())
+		helper.Log().WriteError("RpcServerRegister 注册失败:" + reflect.TypeOf(controller).String())
 	}
 	rs.register(rc.RpcName(), controller)
 }
@@ -96,8 +96,8 @@ type rpcServer struct {
 	lib.Object
 }
 
-func (self *rpcServer) rpcServer() *rpcServer {
-	self.Object.Object(self)
+func (self *rpcServer) Gotree() *rpcServer {
+	self.Object.Gotree(self)
 	self.srv = rpc.NewServer()
 	rpccloseChan = 0
 	return self
@@ -114,7 +114,7 @@ func (self *rpcServer) unregister(name string) {
 func (self *rpcServer) register(name string, controller interface{}) {
 	err := self.srv.RegisterName(name, controller)
 	if err != nil {
-		utils.Log().WriteError(err.Error())
+		helper.Log().WriteError(err.Error())
 	}
 }
 

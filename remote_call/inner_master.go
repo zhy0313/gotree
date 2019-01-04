@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"jryghq.cn/lib"
+	"github.com/8treenet/gotree/lib"
 )
 
 const (
@@ -22,8 +22,8 @@ type InnerMaster struct {
 	ping    bool                   //true ping模式, false node模式
 }
 
-func (self *InnerMaster) InnerMaster() *InnerMaster {
-	self.Object.Object(self)
+func (self *InnerMaster) Gotree() *InnerMaster {
+	self.Object.Gotree(self)
 	self.ping = false
 	self.nodeMap = make(map[string]*nodeManage)
 	self.addrMap = make(map[string]int64)

@@ -5,19 +5,20 @@ import (
 	"net/rpc"
 	"net/rpc/jsonrpc"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
-	"jryghq.cn/lib"
-
-	"jryghq.cn/utils"
+	"github.com/8treenet/gotree/helper"
+	"github.com/8treenet/gotree/lib"
 )
 
 func viewDaos() {
 	client, _ := utilsClient()
 	var replys string
 	client.Call("InnerServer.DaoServerInfo", 100, &replys)
-	fmt.Println(fmt.Sprintf("\x1b[0;%dm%s\x1b[0m", 34, "dao容器服务信息(刷新频次 生产1分钟, 测试同心跳时间):"))
+	fmt.Println(fmt.Sprintf("\x1b[0;%dm%s\x1b[0m", 34, "dao容器服务信息:"))
 	for _, str := range strings.Split(replys, ";") {
 		fmt.Println(str)
 	}
@@ -46,38 +47,61 @@ func viewRuntime() {
 	client.Close()
 }
 
-func viewQps() {
+func viewQps(top int) {
+	//如果top 大于1 只刷新前30
 	client, _ := utilsClient()
 	if client == nil {
 		fmt.Println(fmt.Sprintf("\x1b[0;%dm%s\x1b[0m", 31, "本机未启动business"))
 		os.Exit(0)
 	}
 	var replys string
+	var restart string
 	client.Call("InnerServer.DaoQps", 100, &replys)
+	client.Call("InnerServer.DaoQpsRestartTime", 100, &restart)
 	client.Close()
-	fmt.Println("dao qps:(远程方法, 调用次数, 最高用时, 最低用时, 平均用时)")
-
-	for _, str := range strings.Split(replys, "??") {
+	if top == 1 {
+		fmt.Printf("%46s\n", "Dao qps clear: "+restart)
+		for _, str := range strings.Split(replys, "??") {
+			fmt.Println(str)
+		}
+		return
+	}
+	fmt.Printf("%46s\n", "Dao top 30 qps clear: "+restart)
+	listqps := strings.Split(replys, "??")
+	if len(listqps) > 30 {
+		listqps = listqps[0:30]
+	}
+	for _, str := range listqps {
 		fmt.Println(str)
 	}
 }
 
 func printSystem() {
-	if utils.InArray(os.Args, "status") {
+	if helper.InSlice(os.Args, "status") {
 		viewRuntime()
 		viewDaos()
 		os.Exit(0)
 		return
 	}
-	if utils.InArray(os.Args, "qps") {
-		viewQps()
+	if helper.InSlice(os.Args, "qps") {
+		count := 1
+		if helper.InSlice(os.Args, "-t") {
+			count = 180
+		}
+		for index := 0; index < count; index++ {
+			c := exec.Command("clear")
+			c.Stdout = os.Stdout
+			c.Run()
+			viewQps(count)
+			time.Sleep(1 * time.Second)
+		}
 		os.Exit(0)
 		return
 	}
 }
 
 func utilsClient() (*rpc.Client, string) {
-	addr := utils.Config().String("BindAddr")
+	addr := helper.Config().String("BindAddr")
 	if addr == "" {
 		return nil, addr
 	}
@@ -98,28 +122,28 @@ func utilsClient() (*rpc.Client, string) {
 }
 
 func appStart() {
-	addr := utils.Config().String("BindAddr")
+	addr := helper.Config().String("BindAddr")
 	if addr == "" {
 		panic("undefined BindAddr")
 	}
 	list := strings.Split(addr, ":")
 	port, _ := strconv.Atoi(list[1])
-	if utils.InArray(os.Args, "daemon") {
+	if helper.InSlice(os.Args, "daemon") {
 		lib.AppDaemon()
 		os.Exit(0)
 		return
 	}
-	if utils.InArray(os.Args, "start") {
+	if helper.InSlice(os.Args, "start") {
 		lib.AppStart("businesss", list[0], port)
 		os.Exit(0)
 		return
 	}
-	if utils.InArray(os.Args, "restart") {
+	if helper.InSlice(os.Args, "restart") {
 		lib.AppRestart("businesss", list[0], port)
 		os.Exit(0)
 		return
 	}
-	if utils.InArray(os.Args, "stop") {
+	if helper.InSlice(os.Args, "stop") {
 		lib.AppStop("businesss", list[0], port)
 		os.Exit(0)
 		return

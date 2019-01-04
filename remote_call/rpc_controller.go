@@ -1,7 +1,6 @@
 package remote_call
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"reflect"
@@ -9,8 +8,8 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"jryghq.cn/lib"
-	"jryghq.cn/utils"
+	"github.com/8treenet/gotree/helper"
+	"github.com/8treenet/gotree/lib"
 )
 
 type RpcController struct {
@@ -19,8 +18,8 @@ type RpcController struct {
 }
 
 //RpcServer 构造
-func (self *RpcController) RpcController(child interface{}) *RpcController {
-	self.Object.Object(self)
+func (self *RpcController) Gotree(child interface{}) *RpcController {
+	self.Object.Gotree(self)
 	self.Object.AddChild(self, child)
 	return self
 }
@@ -55,18 +54,10 @@ func (self *RpcController) RemotePort() int {
 	return 0
 }
 
-//ValidEmpty 检查空参数,支持intX  UintX string floatX
-func (self *RpcController) ValidEmpty(args ...interface{}) error {
-	for _, item := range args {
-		strValue := asString(item)
-		if strValue == "" || strValue == "0" {
-			return errors.New("空参数")
-		}
-	}
+//以下内部处理
+func (self *RpcController) TestRpcControllerTest__(cmd int, result *int) error {
 	return nil
 }
-
-//以下内部处理
 
 //RpcInvoke rpc service 反射 远程连接ip
 func (self *RpcController) RpcInvoke(conn net.Conn) bool {
@@ -89,7 +80,7 @@ func (self *RpcController) RpcName() string {
 	controller := reflect.TypeOf(child).Elem().String()
 	name := self.controllerName(controller)
 	if name == "" {
-		utils.Log().WriteError("rpc controller 不符合规定:" + controller)
+		helper.Log().WriteError("rpc controller 不符合规定:" + controller)
 	}
 	return name
 }

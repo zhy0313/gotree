@@ -1,0 +1,68 @@
+package controllers
+
+import (
+	"examples/business/controllers/hook"
+	"examples/business/service"
+	"examples/protocol/business_cmd"
+	"examples/protocol/business_value"
+	"fmt"
+
+	"github.com/8treenet/gotree/business"
+
+	"github.com/8treenet/gotree/helper"
+)
+
+type UserController struct {
+	hook.UserHook
+}
+
+func init() {
+	business.RegisterController(new(UserController).Gotree())
+}
+
+// Gotree
+func (self *UserController) Gotree() *UserController {
+	self.UserHook.Gotree(self)
+	return self
+}
+
+// Prepare
+func (self *UserController) Prepare(method string, argv interface{}) {
+	self.UserHook.Prepare(method, argv)
+	helper.Log().WriteInfo("Prepare:", method, argv)
+}
+
+//Finish
+func (self *UserController) Finish(method string, reply interface{}, e error) {
+	self.UserHook.Finish(method, reply, e)
+	helper.Log().WriteInfo("Finish:", method, fmt.Sprint(reply), e)
+}
+
+// Register
+func (self *UserController) Register(cmd business_cmd.UserRegister, result *business_value.UserRegister) (e error) {
+	var (
+		userSer *service.User
+	)
+	*result = business_value.UserRegister{}
+
+	self.Service(&userSer)
+	id, e := userSer.Register(cmd.UserName)
+	if e != nil {
+		return
+	}
+	result.UserName = cmd.UserName
+	result.UserId = id
+	return
+}
+
+// Order
+func (self *UserController) Order(cmd business_cmd.UserOrder, result *business_value.UserOrder) (e error) {
+	var (
+		userSer *service.User
+	)
+	*result = business_value.UserOrder{}
+
+	self.Service(&userSer)
+	result.List, e = userSer.Order(cmd.UserId)
+	return
+}

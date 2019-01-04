@@ -14,7 +14,7 @@ type Iterator struct {
 }
 
 //Iterator 初始化曲线sleep数据
-func (self *Iterator) Iterator() *Iterator {
+func (self *Iterator) Gotree() *Iterator {
 	self.count = 0
 	self.maxCount = 32
 	self.tick = 0
@@ -24,13 +24,14 @@ func (self *Iterator) Iterator() *Iterator {
 }
 
 //Sleep 睡眠
-func (self *Iterator) Sleep() {
+func (self *Iterator) Sleep() int64 {
 	defer self.next()
 	if self.count == 0 {
 		runtime.Gosched()
-		return
+		return 0
 	}
 	time.Sleep(time.Duration(self.increaseMillisecond*self.count) * time.Millisecond)
+	return int64(self.increaseMillisecond * self.count)
 }
 
 //ResetTimer 重置

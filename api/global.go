@@ -1,16 +1,16 @@
 package api
 
 import (
-	"jryghq.cn/lib"
-	"jryghq.cn/remote_call"
+	"github.com/8treenet/gotree/lib"
+	"github.com/8treenet/gotree/remote_call"
 )
 
 var _scl *lib.ServiceLocator //controller服务定位器
 func init() {
-	_scl = new(lib.ServiceLocator).ServiceLocator()
+	_scl = new(lib.ServiceLocator).Gotree()
 	//注册相关组件
-	_scl.AddComponent(new(remote_call.InnerMaster).InnerMaster())
-	_scl.AddComponent(new(remote_call.InnerClient).InnerClient())
+	_scl.AddComponent(new(remote_call.InnerMaster).Gotree())
+	_scl.AddComponent(new(remote_call.InnerClient).Gotree())
 }
 
 func AppendBusiness(remoteAddr string) {
@@ -19,21 +19,24 @@ func AppendBusiness(remoteAddr string) {
 	ic.AddRemoteAddr(remoteAddr)
 }
 
-//启动连接器 args[0]=最大并发数, args[1]=失败重试次数
+//启动连接器 args[0]=最大并发数, args[1]=call business 超时时间
 func Run(args ...int) {
 	var (
 		ic          *remote_call.InnerClient
-		concurrency int = 2048
-		retry       int = 3
+		concurrency int = 8192
+		callTimeout int = 12
 	)
 	if len(args) > 0 {
 		concurrency = args[0]
 	}
 	if len(args) > 1 {
-		retry = args[1]
+		callTimeout = args[1]
 	}
 	_scl.GetComponent(&ic)
-	_scl.AddComponent(new(remote_call.RpcClient).RpcClient(concurrency, retry))
+	_scl.AddComponent(new(remote_call.RpcClient).Gotree(concurrency, callTimeout))
+	rpcBreak := new(remote_call.RpcBreak).Gotree()
+	_scl.AddComponent(rpcBreak)
+	rpcBreak.RunTick()
 	go ic.Run()
 }
 

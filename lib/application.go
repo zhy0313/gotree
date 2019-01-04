@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"jryghq.cn/utils"
+	"github.com/8treenet/gotree/helper"
 )
 
 func AppDaemon() {
@@ -23,7 +23,7 @@ func AppDaemon() {
 			os.Exit(0)
 		}
 
-		utils.Log().WriteDaemonError("异常错误,10秒后开始重启 :", stderr.String())
+		helper.Log().WriteDaemonError("异常错误,10秒后开始重启 :", stderr.String())
 		time.Sleep(10 * time.Second)
 	}
 }
@@ -50,6 +50,7 @@ func AppStart(name, addr string, port int) {
 	err := cmdStart.Start()
 	if err != nil {
 		fmt.Println(err)
+		os.Exit(-1)
 	}
 
 	<-over
@@ -93,6 +94,7 @@ func AppRestart(name, addr string, port int) {
 	err := cmdStart.Start()
 	if err != nil {
 		fmt.Println(err)
+		os.Exit(-1)
 	}
 	<-over
 	if err == nil {

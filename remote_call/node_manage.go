@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"jryghq.cn/lib/chart"
+	"github.com/8treenet/gotree/lib/chart"
 )
 
 //节点管理器

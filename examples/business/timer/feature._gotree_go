@@ -1,0 +1,53 @@
+package timer
+
+import (
+	"examples/business/service"
+
+	"github.com/8treenet/gotree/business"
+	"github.com/8treenet/gotree/helper"
+)
+
+/*
+	readme!!!!!!!!readme!!!!!!!!readme!!!!!!!!readme!!!!!!!!readme!!!!!!!!readme!!!!!!!!
+	1.Timer和Controller平级,属于会话请求。
+	2.全局禁止使用go func(),请使用Async。
+	3.底层做了优雅关闭和热更新, hook了 async和会话请求。 保证会话请求的闭环执行, 防止造成脏数据。
+	4.底层hook了 async和会话请求 recover和日志处理，防止panic。
+*/
+
+// Feature
+type Feature struct {
+	business.BusinessTimer
+}
+
+func init() {
+	business.RegisterTimer(new(Feature).Gotree())
+}
+
+// Feature
+func (self *Feature) Gotree() *Feature {
+	self.BusinessTimer.Gotree(self)
+	//注册触发定时器 5000毫秒
+	self.RegisterTickTrigger(5000, self.CourseTick)
+
+	//注册每日定时器 3点 1分
+	self.RegisterDayTrigger(3, 1, self.CourseDay)
+	return self
+}
+
+// CourseTick
+func (self *Feature) CourseTick() {
+	var (
+		featureSer *service.Feature
+	)
+	helper.Log().WriteInfo("CourseTick")
+	self.Service(&featureSer)
+	self.Async(func(ac business.AsyncController) {
+		featureSer.Course()
+	})
+}
+
+// CourseTick
+func (self *Feature) CourseDay() {
+	helper.Log().WriteInfo("CourseDay")
+}

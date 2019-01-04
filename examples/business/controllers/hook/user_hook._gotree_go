@@ -1,0 +1,49 @@
+package hook
+
+import (
+	"examples/protocol/business_cmd"
+	"examples/protocol/business_value"
+
+	"github.com/8treenet/gotree/business"
+	"github.com/8treenet/gotree/helper"
+)
+
+//UserHook 采集
+type UserHook struct {
+	business.BusinessController
+	argv interface{}
+}
+
+//Gotree
+func (self *UserHook) Gotree(child ...interface{}) *UserHook {
+	self.BusinessController.Gotree(self)
+	self.AddChild(self, child...)
+	return self
+}
+
+//Prepare
+func (self *UserHook) Prepare(method string, argv interface{}) {
+	if method == "Register" {
+		//bi处理 判断method 的数据是否采集 如果采集记录入参
+		self.argv = argv
+	}
+}
+
+//Finish
+func (self *UserHook) Finish(method string, reply interface{}, e error) {
+	//bi处理 如果argv非空触发数据采集
+	if self.argv == nil || e != nil {
+		return
+	}
+
+	switch method {
+	case "Register":
+		{
+			//入参和出参数据结对
+			in, _ := self.argv.(business_cmd.UserRegister)
+			out, _ := reply.(*business_value.UserRegister)
+			helper.Log().WriteInfo("hook bi:", self.RpcName(), method, in, out)
+		}
+	}
+
+}

@@ -1,8 +1,9 @@
 package lib
 
 import (
-	"jryghq.cn/utils"
 	"reflect"
+
+	"github.com/8treenet/gotree/helper"
 )
 
 //组件基类
@@ -11,8 +12,8 @@ type Components struct {
 }
 
 //初始化
-func (self *Components) Components() *Components {
-	self.dict = new(Dict).Dict()
+func (self *Components) Gotree() *Components {
+	self.dict = new(Dict).Gotree()
 	return self
 }
 
@@ -28,7 +29,7 @@ type updateComponent interface {
 func (self *Components) AddComponent(obj interface{}) {
 	t := reflect.TypeOf(obj)
 	if t.Kind() != reflect.Ptr {
-		utils.Log().WriteError("AddComponent != reflect.Ptr")
+		helper.Log().WriteError("AddComponent != reflect.Ptr")
 	}
 	self.dict.Set(t.Elem().Name(), obj)
 	if app, ok := obj.(updateComponent); ok {

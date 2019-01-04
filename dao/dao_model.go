@@ -3,10 +3,10 @@ package dao
 import (
 	"fmt"
 
-	"jryghq.cn/dao/orm"
-	"jryghq.cn/lib"
-	"jryghq.cn/lib/chart"
-	"jryghq.cn/utils"
+	"github.com/8treenet/gotree/dao/orm"
+	"github.com/8treenet/gotree/helper"
+	"github.com/8treenet/gotree/lib"
+	"github.com/8treenet/gotree/lib/chart"
 
 	// SQL Server 数据库支持
 	_ "github.com/denisenkom/go-mssqldb"
@@ -17,8 +17,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/8treenet/gotree/lib/rpc"
+
 	_ "github.com/go-sql-driver/mysql"
-	"jryghq.cn/lib/rpc"
 )
 
 type DaoModel struct {
@@ -41,7 +42,7 @@ func init() {
 }
 
 func (self *DaoModel) DaoModel(child interface{}) *DaoModel {
-	self.Object.Object(self)
+	self.Object.Gotree(self)
 	self.AddChild(self, child)
 	self.open = false
 	self.daoName = ""
@@ -51,14 +52,18 @@ func (self *DaoModel) DaoModel(child interface{}) *DaoModel {
 	return self
 }
 
+type Conn interface {
+	Raw(query string, args ...interface{}) orm.RawSeter
+}
+
 //Orm 获取orm
-func (self *DaoModel) Orm() orm.Ormer {
+func (self *DaoModel) Conn() Conn {
 	if !self.open {
-		utils.Log().WriteError("model error: 未开启dao:" + self.daoName)
+		helper.Log().WriteError("model error: 未开启dao:" + self.daoName)
 		panic("model error: 未开启dao")
 	}
 	if self.daoName == "" {
-		utils.Log().WriteError("这是一个未注册的dao")
+		helper.Log().WriteError("这是一个未注册的dao")
 		return nil
 	}
 	o := orm.New(self.daoName)
@@ -72,9 +77,9 @@ func (self *DaoModel) Orm() orm.Ormer {
 
 //TestOn 单元测试 开启
 func (self *DaoModel) TestOn() {
-	mode := utils.Config().String("sys::mode")
+	mode := helper.Config().String("sys::Mode")
 	if mode == "prod" {
-		utils.Log().WriteError("生产环境不可以使用单元测试model")
+		helper.Log().WriteError("生产环境不可以使用单元测试model")
 		panic("生产环境不可以使用单元测试model")
 	}
 	rpc.GoDict().Set("bseq", "ModelUnit")
@@ -115,18 +120,18 @@ func (self *DaoModel) ormOn() {
 	}
 	//处理连接
 	driver := "mysql"
-	dbconfig := utils.Config().String("mysql::" + self.daoName)
-	dbMaxIdleConns := utils.Config().String("mysql::" + self.daoName + "MaxIdleConns")
-	dbMaxOpenConns := utils.Config().String("mysql::" + self.daoName + "MaxOpenConns")
+	dbconfig := helper.Config().String("mysql::" + self.daoName)
+	dbMaxIdleConns := helper.Config().String("mysql::" + self.daoName + "MaxIdleConns")
+	dbMaxOpenConns := helper.Config().String("mysql::" + self.daoName + "MaxOpenConns")
 	if dbconfig == "" {
 		driver = "mssql"
-		dbconfig = utils.Config().String("mssql::" + self.daoName)
-		dbMaxIdleConns = utils.Config().String("mssql::" + self.daoName + "MaxIdleConns")
-		dbMaxOpenConns = utils.Config().String("mssql::" + self.daoName + "MaxOpenConns")
+		dbconfig = helper.Config().String("mssql::" + self.daoName)
+		dbMaxIdleConns = helper.Config().String("mssql::" + self.daoName + "MaxIdleConns")
+		dbMaxOpenConns = helper.Config().String("mssql::" + self.daoName + "MaxOpenConns")
 	}
 
 	if dbconfig == "" {
-		utils.Log().WriteError(self.daoName + ":数据库配置信息不存在")
+		helper.Log().WriteError(self.daoName + ":数据库配置信息不存在")
 		panic(self.daoName + ":数据库配置信息不存在")
 	}
 	_, err := orm.GetDB(self.daoName)
@@ -135,21 +140,21 @@ func (self *DaoModel) ormOn() {
 		return
 	}
 	if dbMaxIdleConns == "" {
-		dbMaxIdleConns = utils.Config().DefaultString("sys::SqlMaxIdleConns", "1")
+		dbMaxIdleConns = helper.Config().DefaultString("sys::SqlMaxIdleConns", "1")
 	}
 	if dbMaxOpenConns == "" {
-		dbMaxOpenConns = utils.Config().DefaultString("sys::SqlMaxOpenConns", "2")
+		dbMaxOpenConns = helper.Config().DefaultString("sys::SqlMaxOpenConns", "2")
 	}
 	maxIdleConns, ei := strconv.Atoi(dbMaxIdleConns)
 	maxOpenConns, eo := strconv.Atoi(dbMaxOpenConns)
 	if ei != nil || eo != nil || maxIdleConns == 0 || maxOpenConns == 0 || maxIdleConns > maxOpenConns {
-		utils.Log().WriteError("连接dao sql:" + self.daoName + "失败, 错误原因: MaxIdleConns 或MaxOpenConns 参数错误")
+		helper.Log().WriteError("连接dao sql:" + self.daoName + "失败, 错误原因: MaxIdleConns 或MaxOpenConns 参数错误")
 		panic("连接dao sql:" + self.daoName + "失败, 错误原因: MaxIdleConns 或MaxOpenConns 参数错误")
 	}
-	utils.Log().WriteInfo("jryg connect database: MaxIdleConns:" + dbMaxIdleConns + ", MaxOpenConns:" + dbMaxOpenConns + ", config:" + dbconfig)
+	helper.Log().WriteInfo("connect database: MaxIdleConns:" + dbMaxIdleConns + ", MaxOpenConns:" + dbMaxOpenConns + ", config:" + dbconfig)
 	err = orm.RegisterDataBase(self.daoName, driver, dbconfig, maxIdleConns, maxOpenConns)
 	if err != nil {
-		utils.Log().WriteError("连接dao sql:" + self.daoName + "失败, 错误原因:" + err.Error())
+		helper.Log().WriteError("连接dao sql:" + self.daoName + "失败, 错误原因:" + err.Error())
 		panic("连接dao sql:" + self.daoName + "失败, 错误原因:" + err.Error())
 	}
 }
@@ -164,7 +169,7 @@ func (self *DaoModel) FormatArray(args ...interface{}) (list []interface{}) {
 		}
 
 		//slice组合
-		items, ok := utils.TakeSliceArg(item)
+		items, ok := takeSliceArg(item)
 		if !ok {
 			continue
 		}
@@ -207,7 +212,7 @@ func (self *DaoModel) profiler(ssql string, args ...interface{}) {
 	sourceSql := fmt.Sprintf(strings.Replace(ssql, "?", "%v", -1), args...)
 	sql := strings.ToLower(sourceSql)
 	if strings.Contains(sql, "delete") || strings.Contains(sql, "update") || strings.Contains(sql, "insert") || strings.Contains(sql, "count") || strings.Contains(sql, "sum") || strings.Contains(sql, "max") {
-		utils.Log().WriteInfo("sql profiler:", sourceSql)
+		helper.Log().WriteInfo("sql profiler:", sourceSql)
 		return
 	}
 	var explain []struct {
@@ -236,9 +241,9 @@ func (self *DaoModel) profiler(ssql string, args ...interface{}) {
 		explainLog = "explain :(" + explainLog + ")"
 	}
 	if warn {
-		utils.Log().WriteWarn("sql profiler:", explainLog, "source :("+sourceSql+")")
+		helper.Log().WriteWarn("sql profiler:", explainLog, "source :("+sourceSql+")")
 	} else {
-		utils.Log().WriteInfo("sql profiler:", explainLog, "source :("+sourceSql+")")
+		helper.Log().WriteInfo("sql profiler:", explainLog, "source :("+sourceSql+")")
 	}
 
 	bseq := dict.Get("bseq")
@@ -261,7 +266,7 @@ func (self *DaoModel) profiler(ssql string, args ...interface{}) {
 			delete(modelProfilerCount, str+"_"+table)
 			modelProfilerSync.Unlock()
 			if tableCount > 1 && ok {
-				utils.Log().WriteWarn("在一个bseq:" + str + " 内读取表'" + table + "' " + fmt.Sprint(tableCount) + "次")
+				helper.Log().WriteWarn("在一个bseq:" + str + " 内读取表'" + table + "' " + fmt.Sprint(tableCount) + "次")
 			}
 		}()
 	}
@@ -296,4 +301,19 @@ func (self *DaoModel) DaoInit() {
 	if self.daoName == "" {
 		self.daoName = self.TopChild().(daoName).Dao()
 	}
+}
+
+func takeSliceArg(arg interface{}) (out []interface{}, ok bool) {
+
+	slice := reflect.ValueOf(arg)
+	if slice.Kind() != reflect.Slice {
+		return nil, false
+	}
+
+	c := slice.Len()
+	out = make([]interface{}, c)
+	for i := 0; i < c; i++ {
+		out[i] = slice.Index(i).Interface()
+	}
+	return out, true
 }

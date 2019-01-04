@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"jryghq.cn/lib"
-	"jryghq.cn/lib/rpc"
-	"jryghq.cn/remote_call"
-	"jryghq.cn/utils"
+	"github.com/8treenet/gotree/helper"
+	"github.com/8treenet/gotree/lib"
+	"github.com/8treenet/gotree/lib/rpc"
+	"github.com/8treenet/gotree/remote_call"
 )
 
 type daoName interface {
@@ -22,6 +22,7 @@ var _csl *lib.ServiceLocator //缓存服务定位器
 var _esl *lib.ServiceLocator //内存服务定位器
 var _api *lib.ServiceLocator //api服务定位器
 var _daoOnList []daoNode
+var queueMap map[string]*daoQueue
 
 type daoNode struct {
 	Name  string
@@ -30,28 +31,30 @@ type daoNode struct {
 }
 
 func init() {
-	utils.LoadConfig("dao")
-	if utils.Config().String("sys::mode") == "dev" || utils.Config().String("sys::mode") == "pre" {
+	helper.LoadConfig("dao")
+	if helper.Config().String("sys::Mode") == "dev" {
 		modelProfiler = true
 	}
 	logOn()
 	appStart()
+	queueMap = make(map[string]*daoQueue)
 
-	_msl = new(lib.ServiceLocator).ServiceLocator() //model数据源
-	_csl = new(lib.ServiceLocator).ServiceLocator() //cache数据源
-	_api = new(lib.ServiceLocator).ServiceLocator() //api数据源
-	_esl = new(lib.ServiceLocator).ServiceLocator() //内存数据源
+	_msl = new(lib.ServiceLocator).Gotree() //model数据源
+	_csl = new(lib.ServiceLocator).Gotree() //cache数据源
+	_api = new(lib.ServiceLocator).Gotree() //api数据源
+	_esl = new(lib.ServiceLocator).Gotree() //内存数据源
+
+	helper.SetGoDict(rpc.GoDict())
 	lib.SetGoDict(rpc.GoDict())
-	tp = lib.NewTaskPool(utils.Config().DefaultInt("sys::ApiConcurrency", 768)) //同时最多768 网络请求并发
-	tp.Start()
+	tp = new(lib.LimiteGo).Gotree(helper.Config().DefaultInt("sys::ApiConcurrency", 1024))
 
-	innerRpcServer := new(remote_call.InnerServerController).InnerServerController()
+	innerRpcServer := new(remote_call.InnerServerController).Gotree()
 	remote_call.RpcServerRegister(innerRpcServer)
 }
 
 //RpcServerRegister 注册rpc服务
 func RegisterController(controller interface{}) {
-	if utils.Testing() {
+	if helper.Testing() {
 		return
 	}
 	remote_call.RpcServerRegister(controller)
@@ -59,7 +62,7 @@ func RegisterController(controller interface{}) {
 
 //RegisterModel 注册model
 func RegisterModel(service interface{}) {
-	if utils.Testing() {
+	if helper.Testing() {
 		return
 	}
 	type init interface {
@@ -67,7 +70,7 @@ func RegisterModel(service interface{}) {
 	}
 	service.(init).DaoInit()
 	if _msl.CheckService(service) {
-		utils.Log().WriteError("RegisterModel 重复注册")
+		helper.Log().WriteError("RegisterModel 重复注册")
 		panic("RegisterModel 重复注册")
 	}
 	_msl.AddService(service)
@@ -75,7 +78,7 @@ func RegisterModel(service interface{}) {
 
 //RegisterModel 注册cache
 func RegisterCache(service interface{}) {
-	if utils.Testing() {
+	if helper.Testing() {
 		return
 	}
 	type init interface {
@@ -83,7 +86,7 @@ func RegisterCache(service interface{}) {
 	}
 	service.(init).DaoInit()
 	if _csl.CheckService(service) {
-		utils.Log().WriteError("RegisterCache 重复注册")
+		helper.Log().WriteError("RegisterCache 重复注册")
 		panic("RegisterCache 重复注册")
 	}
 	_csl.AddService(service)
@@ -91,7 +94,7 @@ func RegisterCache(service interface{}) {
 
 //RegisterMemory 注册内存
 func RegisterMemory(service interface{}) {
-	if utils.Testing() {
+	if helper.Testing() {
 		return
 	}
 	type init interface {
@@ -99,7 +102,7 @@ func RegisterMemory(service interface{}) {
 	}
 	service.(init).DaoInit()
 	if _esl.CheckService(service) {
-		utils.Log().WriteError("RegisterMemory 重复注册")
+		helper.Log().WriteError("RegisterMemory 重复注册")
 		panic("RegisterMemory 重复注册")
 	}
 	_esl.AddService(service)
@@ -107,32 +110,51 @@ func RegisterMemory(service interface{}) {
 
 //RegisterApi 注册api
 func RegisterApi(service interface{}) {
-	if utils.Testing() {
+	if helper.Testing() {
 		return
 	}
-	type init interface {
-		DaoInit()
-	}
-	service.(init).DaoInit()
 	if _api.CheckService(service) {
-		utils.Log().WriteError("RegisterApi 重复注册")
+		helper.Log().WriteError("RegisterApi 重复注册")
 		panic("RegisterApi 重复注册")
 	}
 	_api.AddService(service)
 }
 
+//RegisterQueue 队列
+//queueName:队列名字
+//queueLen:队列长度
+//goroutine:队列消费的go程数量,默认是1
+func RegisterQueue(controller interface{}, queueName string, queueLen int, goroutine ...int) {
+	type rpcname interface {
+		RpcName() string
+	}
+
+	rc, ok := controller.(rpcname)
+	if !ok {
+		panic("RegisterQueue error")
+	}
+	dao := rc.RpcName()
+	mgo := 1
+	if len(goroutine) > 0 && goroutine[0] > 0 {
+		mgo = goroutine[0]
+	}
+	q := new(daoQueue).Gotree(queueLen, mgo, dao, queueName)
+	go q.mainRun()
+	queueMap[dao+"_"+queueName] = q
+}
+
 //daoOn 开启dao
 func daoOn() {
-	openDao, err := utils.Config().GetSection("dao_on")
+	openDao, err := helper.Config().GetSection("dao_on")
 	if err != nil {
-		utils.Log().WriteError("未找到 dao dao_on:", err)
+		helper.Log().WriteError("未找到 dao dao_on:", err)
 		os.Exit(-1)
 	}
 	controllers := remote_call.RpcControllerNames()
 	for k, v := range openDao {
 		id, e := strconv.Atoi(v)
 		if e != nil {
-			utils.Log().WriteError("dao id 错误:", k, v)
+			helper.Log().WriteError("dao id 错误:", k, v)
 			continue
 		}
 		var daoName string
@@ -142,12 +164,12 @@ func daoOn() {
 			}
 		}
 		if daoName == "" {
-			utils.Log().WriteError("未找到 dao:", k)
+			helper.Log().WriteError("未找到 dao:", k)
 			continue
 		}
 
 		extra := []interface{}{}
-		extraList := strings.Split(utils.Config().String("dao_extra::"+daoName), ",")
+		extraList := strings.Split(helper.Config().String("dao_extra::"+daoName), ",")
 		for _, item := range extraList {
 			extra = append(extra, item)
 		}
@@ -158,21 +180,21 @@ func daoOn() {
 func Run(args ...interface{}) {
 	var bindAddr string
 	if len(args) == 0 {
-		bindAddr = utils.Config().String("BindAddr")
+		bindAddr = helper.Config().String("BindAddr")
 	}
 
 	tick := lib.RunTick(1000, memoryTimeout, "memoryTimeout", 3000)
 	daoOn()
 	telnet()
 
-	ic := new(remote_call.InnerClient).InnerClient()
+	ic := new(remote_call.InnerClient).Gotree()
 	initInnerClient(ic)
 
 	//通知所有model dao关联
-	task := lib.NewTaskGroup()
+	task := helper.NewGroup()
 	for _, daoItem := range daos() {
 		daonode := daoItem.(daoNode)
-		task.AddFuncByGroup(func() error {
+		task.Add(func() error {
 			_msl.NotitySubscribe("ModelOn", daonode.Name)
 			_msl.NotitySubscribe("CacheOn", daonode.Name)
 			_msl.NotitySubscribe("MemoryOn", daonode.Name)
@@ -180,13 +202,16 @@ func Run(args ...interface{}) {
 			return nil
 		})
 	}
-	task.WaitByGroup()
+	if e := task.Wait(); e != nil {
+		helper.Log().WriteError(e.Error())
+		panic(e.Error())
+	}
 	_esl.NotitySubscribe("startup")
 
 	rpcser := remote_call.RpcServerRun(bindAddr, func(svrName string) {
 		for _, item := range _daoOnList {
 			if svrName == item.Name {
-				utils.Log().WriteInfo("启动:", svrName, "id:", item.Id)
+				helper.Log().WriteInfo("启动:", svrName, "id:", item.Id)
 				_daoOnList = append(_daoOnList, item)
 				return
 			}
@@ -198,8 +223,9 @@ func Run(args ...interface{}) {
 	//优雅关闭
 	for index := 0; index < 30; index++ {
 		num := rpc.CurrentCallNum()
-		utils.Log().WriteInfo("jryg dao close: 请求服务剩余:", num)
-		if num <= 0 {
+		qlen := allQueueLen()
+		helper.Log().WriteInfo("dao close: 请求服务剩余:", num, "队列剩余:", qlen)
+		if num <= 0 && qlen <= 0 {
 			break
 		}
 		time.Sleep(time.Second * 1)
@@ -207,14 +233,14 @@ func Run(args ...interface{}) {
 	_esl.NotitySubscribe("shutdown")
 	rpcser.Close()
 	tick.Stop()
-	utils.Log().WriteInfo("jryg dao close")
-	utils.Log().Close()
+	helper.Log().WriteInfo("dao close")
+	helper.Log().Close()
 }
 
 func initInnerClient(ic *remote_call.InnerClient) {
-	baddrs := utils.Config().String("BusinessAddrs")
+	baddrs := helper.Config().String("BusinessAddrs")
 	if baddrs == "" {
-		utils.Log().WriteError("BusinessAddrs地址为空")
+		helper.Log().WriteError("BusinessAddrs地址为空")
 	}
 	for index := 0; index < len(_daoOnList); index++ {
 		ic.AddDaoByNode(_daoOnList[index].Name, _daoOnList[index].Id, _daoOnList[index].Extra...)
@@ -226,7 +252,8 @@ func initInnerClient(ic *remote_call.InnerClient) {
 		port, _ := strconv.Atoi(addr[1])
 		ic.AddBusiness(addr[0], port)
 	}
-	ic.SetDbCountFunc(dbConnectNum)
+	remote_call.SetDbCountFunc(dbConnectNum)
+	remote_call.SetQueueCountFunc(allQueueLen)
 }
 
 func daos() (list []interface{}) {
@@ -237,13 +264,13 @@ func daos() (list []interface{}) {
 }
 
 func logOn() {
-	mode := utils.Config().String("sys::mode")
+	mode := helper.Config().String("sys::Mode")
 	if mode != "prod" {
 		//如果是测试当前目录创建日志文件 并开启fmt.print
-		utils.Log().Debug()
+		helper.Log().Debug()
 	}
-	dir := utils.Config().DefaultString("sys::LogDir", "log")
-	utils.Log().Init(dir, rpc.GoDict())
+	dir := helper.Config().DefaultString("sys::LogDir", "log")
+	helper.Log().Init(dir, rpc.GoDict())
 }
 
 // memoryTimeout 内存超时检测
@@ -273,9 +300,17 @@ var ormConMutex sync.Mutex
 func connectDao(daoName string) bool {
 	defer ormConMutex.Unlock()
 	ormConMutex.Lock()
-	if utils.InArray(ormConnect, daoName) {
+	if helper.InSlice(ormConnect, daoName) {
 		return false
 	}
 	ormConnect = append(ormConnect, daoName)
 	return true
+}
+
+// allQueueLen 当前全部队列长度
+func allQueueLen() (result int) {
+	for _, q := range queueMap {
+		result += len(q.queue)
+	}
+	return
 }

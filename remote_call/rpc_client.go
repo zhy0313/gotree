@@ -3,23 +3,25 @@ package remote_call
 import (
 	"errors"
 	"fmt"
-	"math/rand"
 	"net/rpc"
 	"reflect"
 	"strings"
 	"time"
 
-	"jryghq.cn/lib"
-	jrygrpc "jryghq.cn/lib/rpc"
-	"jryghq.cn/utils"
+	"github.com/8treenet/gotree/helper"
+	"github.com/8treenet/gotree/lib"
+	gotree_rpc "github.com/8treenet/gotree/lib/rpc"
 )
 
 type RpcClient struct {
 	lib.Object
-	task       *lib.TaskPool
-	retry      int
-	recoverLog bool
-	connReuse  bool //连接池,连接复用 默认开启
+	limiteGo    *lib.LimiteGo
+	retry       int8
+	sleepCount  int
+	connReuse   bool //连接池,连接复用 默认开启
+	innerMaster *InnerMaster
+	rpcQps      *RpcQps
+	rpcBreak    *RpcBreak
 }
 
 type cmdCall interface {
@@ -33,48 +35,50 @@ type businessCmd interface {
 }
 
 //并发数量 和rpc失败重试次数
-func (self *RpcClient) RpcClient(concurrency int, retry int) *RpcClient {
-	self.Object.Object(self)
-	self.task = lib.NewTaskPool(concurrency)
-	self.task.Start()
+func (self *RpcClient) Gotree(concurrency int, timeout int) *RpcClient {
+	self.Object.Gotree(self)
+	self.limiteGo = new(lib.LimiteGo).Gotree(concurrency)
 	maxConnCount += concurrency / 64
 
-	self.retry = 5
-	if retry < 9 || retry > 0 {
-		self.retry = retry
-	}
-	self.recoverLog = false
+	self.retry = 10 //网络超时重试重试次数
 	self.connReuse = true
+
+	self.sleepCount = timeout * 1000 //转毫秒
+	if self.sleepCount > 2000 {
+		ms10count := (self.sleepCount - 2000) / 10
+		self.sleepCount = ms10count + 2000
+	}
 	return self
 }
 
 //Call cmd obj参数, reply &daostruct 或 &businessstruct
 func (self *RpcClient) Call(obj interface{}, reply interface{}) (err error) {
-	var innerMaster *InnerMaster
-	var identity string
-	var identityUse bool = false
-	var beginMs int64
+	var (
+		identity    string
+		identityUse bool = false
+		beginMs     int64
+		timeoutCall bool
+	)
 
-	self.GetComponent(&innerMaster)
-	if innerMaster == nil {
-		panic("未获取到InnerMaster")
+	if self.innerMaster == nil {
+		self.GetComponent(&self.innerMaster)
 	}
+	if self.rpcBreak == nil {
+		self.GetComponent(&self.rpcBreak)
+	}
+
 	cmd := obj.(cmdCall)
-	serviceMethod := cmd.ServiceMethod()
-	if !innerMaster.ping {
+	if !self.innerMaster.ping {
 		beginMs = time.Now().UnixNano() / 1e6
 	}
 
 	defer func() {
-		if !innerMaster.ping && !identityUse && (err == nil || err != unknownNetwork) {
+		if !self.innerMaster.ping && !identityUse && (err == nil || err != unknownNetwork || err != errBreaker) {
 			//无错误或非网络错误 并且 非cmd缓存 加入统计
-			self.Qps(serviceMethod, time.Now().UnixNano()/1e6-beginMs)
+			self.qps(cmd.ServiceMethod(), time.Now().UnixNano()/1e6-beginMs)
 		}
 		if err != nil {
-			if !innerMaster.ping {
-				childObj, _ := obj.(cmdSerChild)
-				err = errors.New("call dao " + childObj.Control() + "." + childObj.Action() + ", error:" + err.Error())
-			}
+			err = errors.New(cmd.ServiceMethod() + ": " + err.Error())
 			return
 		}
 		//如果未开启缓存 并且使用缓存获取的数据不处理
@@ -82,39 +86,34 @@ func (self *RpcClient) Call(obj interface{}, reply interface{}) (err error) {
 			return
 		}
 		cacheValue := reflect.Indirect(reflect.ValueOf(reply)).Interface()
-		jrygrpc.GoDict().Set(identity, cacheValue)
+		gotree_rpc.GoDict().Set(identity, cacheValue)
 	}()
-
+	if self.rpcBreak.Breaking(cmd) {
+		return errBreaker
+	}
 	cacheIdentity := cmd.Cache()
 	if cacheIdentity != nil {
 		identity = self.ClassName(cmd) + "_" + fmt.Sprint(cacheIdentity)
-		if jrygrpc.GoDict().Eval(identity, reply) == nil {
+		if gotree_rpc.GoDict().Eval(identity, reply) == nil {
 			identityUse = true
 			return
 		}
 	}
 
 	fun := func() error {
-		if self.recoverLog {
-			defer func() {
-				if perr := recover(); perr != nil {
-					utils.Log().WriteError(perr)
-				}
-			}()
-		}
 		var addr string
 		var resultErr error
-		if innerMaster.ping {
+		if self.innerMaster.ping {
 			//api层调用Business
 			bc, ok := obj.(businessCmd)
 			if ok {
 				addr = bc.BusinessAddr()
 			} else {
-				addr = innerMaster.randomRpcAddr()
+				addr = self.innerMaster.randomRpcAddr()
 			}
 		} else {
 			//Business层调用dao
-			addr, resultErr = cmd.RemoteAddr(innerMaster)
+			addr, resultErr = cmd.RemoteAddr(self.innerMaster)
 			if resultErr != nil {
 				return resultErr
 			}
@@ -128,19 +127,23 @@ func (self *RpcClient) Call(obj interface{}, reply interface{}) (err error) {
 			return ErrNetwork
 		}
 
-		callDone := jrc.client.Go(serviceMethod, cmd, reply, make(chan *rpc.Call, 1)).Done
-		e = errors.New("超时请求:" + serviceMethod)
-		for index := 1; index < 100; index++ {
-			forbreak := false
+		callDone := jrc.client.Go(cmd.ServiceMethod(), cmd, reply, make(chan *rpc.Call, 1)).Done
+		e = errors.New("超时请求")
+		timeoutCall = true
+		for index := 0; index < self.sleepCount; index++ {
 			select {
 			case call := <-callDone:
-				forbreak = true
+				timeoutCall = false
 				e = call.Error
 				break
 			default:
-				time.Sleep(time.Duration(index*5) * time.Millisecond)
+				if index < 2000 {
+					time.Sleep(1 * time.Millisecond)
+				} else {
+					time.Sleep(10 * time.Millisecond)
+				}
 			}
-			if forbreak {
+			if !timeoutCall {
 				break
 			}
 		}
@@ -158,16 +161,14 @@ func (self *RpcClient) Call(obj interface{}, reply interface{}) (err error) {
 		return resultErr
 	}
 
-	for index := 1; index <= self.retry; index++ {
-		err = self.task.CallFunc(fun)
-		if err == nil {
-			return
-		}
-
-		if err != ErrNetwork {
+	for index := int8(1); index <= self.retry; index++ {
+		err = self.limiteGo.Go(fun)
+		//如果无错误 或 不是网络造成的错误return
+		if err == nil || err != ErrNetwork {
+			go self.rpcBreak.Call(cmd, timeoutCall)
 			return err
 		}
-		time.Sleep(time.Duration(500+rand.Intn(1500)) * time.Millisecond) //休眠后重试, 重试次数越多,sleep时间越久
+		time.Sleep(1 * time.Second)
 	}
 	err = unknownNetwork
 	return
@@ -207,29 +208,21 @@ func (self *RpcClient) releaseJsonCall(client *rpcConn, err error) {
 }
 
 func (self *RpcClient) Close() {
-	utils.Log().WriteInfo("jryg business close: 关闭task...")
-	self.task.Close()
-	utils.Log().WriteInfo("jryg business close: task已关闭")
-	utils.Log().WriteInfo("jryg business close: 关闭dao连接池...")
+	helper.Log().WriteInfo(" business close: 关闭dao连接池...")
 	connPool.Close()
-	utils.Log().WriteInfo("jryg business close: dao连接池已关闭")
+	helper.Log().WriteInfo(" business close: dao连接池已关闭")
 	return
 }
 
-// RecoverLog 开启
-func (self *RpcClient) RecoverLog() {
-	self.recoverLog = true
-	return
-}
-
-func (self *RpcClient) Qps(serviceMethod string, ms int64) {
+func (self *RpcClient) qps(serviceMethod string, ms int64) {
+	if self.rpcQps == nil {
+		self.GetComponent(&self.rpcQps)
+	}
+	if self.rpcQps == nil {
+		panic("未获取到rpcQps")
+	}
 	go func() {
-		var rpcQps *RpcQps
-		self.GetComponent(&rpcQps)
-		if rpcQps == nil {
-			panic("未获取到InnerQps")
-		}
-		rpcQps.Qps(serviceMethod, ms)
+		self.rpcQps.Qps(serviceMethod, ms)
 	}()
 }
 
@@ -238,3 +231,4 @@ var ErrConnect = errors.New("dial is fail")
 var ErrNetwork = errors.New("connection is shut down")
 var Unexpected = errors.New("unexpected EOF")
 var unknownNetwork = errors.New("未知网络错误")
+var errBreaker = errors.New("熔断")

@@ -3,8 +3,8 @@ package dao
 import (
 	"reflect"
 
-	"jryghq.cn/dao/orm"
-	"jryghq.cn/remote_call"
+	"github.com/8treenet/gotree/dao/orm"
+	"github.com/8treenet/gotree/remote_call"
 )
 
 //DaoController
@@ -13,9 +13,9 @@ type DaoController struct {
 	selfName string
 }
 
-//DaoController
-func (self *DaoController) DaoController(child interface{}) *DaoController {
-	self.RpcController.RpcController(self)
+//Gotree
+func (self *DaoController) Gotree(child interface{}) *DaoController {
+	self.RpcController.Gotree(self)
 	self.AddChild(self, child)
 
 	type fun interface {
@@ -55,11 +55,6 @@ func (self *DaoController) Cache(child interface{}) {
 
 //Api 服务定位器获取Api
 func (self *DaoController) Api(child interface{}) {
-	apiDao := reflect.ValueOf(child).Elem().Interface().(daoName).Dao()
-	if self.selfName != apiDao {
-		panic("api不在一个dao下,不要乱调用")
-	}
-
 	err := _api.Service(child)
 	if err != nil {
 		panic("禁止调用:" + err.Error())
@@ -84,6 +79,15 @@ func (self *DaoController) Memory(child interface{}) {
 //Transaction 事务
 func (self *DaoController) Transaction(fun func() error) error {
 	return orm.Transaction(self.selfName, fun)
+}
+
+//Queue 队列处理
+func (self *DaoController) Queue(name string, fun func() error) {
+	q, ok := queueMap[self.selfName+"_"+name]
+	if !ok {
+		panic("未注册队列:" + self.selfName + "." + name)
+	}
+	q.cast(fun)
 }
 
 //TotalPage 总页数

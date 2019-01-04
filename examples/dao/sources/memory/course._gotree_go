@@ -1,0 +1,51 @@
+package memory
+
+import (
+	"github.com/8treenet/gotree/dao"
+)
+
+// Course
+type Course struct {
+	dao.DaoMemory
+}
+
+func init() {
+	dao.RegisterMemory(new(Course).Gotree())
+}
+
+//Gotree
+func (self *Course) Gotree() *Course {
+	self.DaoMemory.Gotree(self)
+	return self
+}
+
+//Dao
+func (self *Course) Dao() string {
+	return "Feature"
+}
+
+func (self *Course) TestSet(i int, s string) {
+	var data struct {
+		CourseInt    int
+		CourseString string
+	}
+	data.CourseInt = i
+	data.CourseString = s
+	//Setnx 如果当前key存在， 返回false。
+	//Set 如果当前key存在，覆盖。
+	//if self.Set("Feature", data) {
+	if self.Setnx("Feature", data) {
+		//Expire 设置生存时间
+		self.Expire("Feature", 5)
+	}
+}
+
+func (self *Course) TestGet() (result struct {
+	CourseInt    int
+	CourseString string
+}, exists bool) {
+
+	//Get 存在返回true, 不存在反回false
+	exists = self.Get("Feature", &result)
+	return
+}

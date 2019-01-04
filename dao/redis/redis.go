@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/8treenet/gotree/helper"
 	"github.com/garyburd/redigo/redis"
-	"jryghq.cn/utils"
 )
 
 var dbs map[string]*Cache
@@ -124,7 +124,7 @@ func (rc *Cache) getRc() (redis.Conn, error) {
 // actually do the redis cmds
 func (rc *Cache) do(commandName string, args ...interface{}) (reply interface{}, err error) {
 	if strings.ToLower(commandName) == "select" {
-		utils.Log().WriteError("运行中不可以切库")
+		helper.Log().WriteError("运行中不可以切库")
 	}
 
 	c, err := rc.getRc()

@@ -10,11 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"jryghq.cn/lib/rpc"
-
-	"jryghq.cn/utils"
-
-	"jryghq.cn/lib"
+	"github.com/8treenet/gotree/lib"
 )
 
 type InnerClient struct {
@@ -32,8 +28,8 @@ type InnerClient struct {
 	closeMsg     chan bool
 }
 
-func (self *InnerClient) InnerClient() *InnerClient {
-	self.Object.Object(self)
+func (self *InnerClient) Gotree() *InnerClient {
+	self.Object.Gotree(self)
 	self.ping = false
 	self.BusinesssAddr = make([]*struct {
 		Addr      string
@@ -46,10 +42,6 @@ func (self *InnerClient) InnerClient() *InnerClient {
 	self.LastInfoTime = 0
 	self.closeMsg = make(chan bool, 1)
 	return self
-}
-func (self *InnerClient) SetDbCountFunc(dbCountFunc func() int) {
-	self.dbCountFunc = dbCountFunc
-	return
 }
 
 //AddRemoteSerAddr 加入远程地址
@@ -164,13 +156,11 @@ func (self *InnerClient) Run() {
 				}
 			}
 		} else {
-			serverInfo := self.Info()
+
 			var cmd struct {
 				DaoList []DaoNodeInfo
-				Info    []string `opt:"empty"` //程序信息
 			}
 			cmd.DaoList = self.daos
-			cmd.Info = serverInfo
 
 			for _, v := range self.BusinesssAddr {
 				rpcaddr := fmt.Sprintf("%s:%d", v.Addr, v.Port)
@@ -215,28 +205,6 @@ func (self *InnerClient) Run() {
 			time.Sleep(500 * time.Millisecond)
 		}
 	}
-}
-
-func (self *InnerClient) Info() (result []string) {
-	cunix := time.Now().Unix()
-	if cunix-self.LastInfoTime < 60 && utils.Config().String("sys::mode") != "dev" {
-		return
-	}
-	self.LastInfoTime = cunix
-	m := runtime.MemStats{}
-	runtime.ReadMemStats(&m)
-	result = append(result, fmt.Sprint(m.Alloc/1024/1024))        //内存占用mb
-	result = append(result, fmt.Sprintf("%.3f", m.GCCPUFraction)) //gc cpu占用
-	result = append(result, fmt.Sprint(m.NumGC))                  //gc 次数
-	result = append(result, fmt.Sprint(rpc.CurrentCallNum()))     //当前 go 数量
-	if self.dbCountFunc != nil {
-		result = append(result, fmt.Sprint(self.dbCountFunc())) //数据库总连接数
-	} else {
-		result = append(result, "") //数据库总连接数
-	}
-
-	result = append(result, self.StartTime) //系统启动时间
-	return
 }
 
 func (self *InnerClient) Close() {

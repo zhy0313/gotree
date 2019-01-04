@@ -1,0 +1,24 @@
+package business_cmd
+
+import (
+	rc "github.com/8treenet/gotree/remote_call"
+)
+
+type QpsCmd struct {
+	rc.RpcCmd
+	Text string
+}
+
+func (self *QpsCmd) QpsCmd(text string) *QpsCmd {
+	self.RpcCmd.Gotree(self)
+	self.Text = text
+	return self
+}
+
+func (self *QpsCmd) Control() string {
+	return "Test"
+}
+
+func (self *QpsCmd) Action() string {
+	return "Press"
+}
