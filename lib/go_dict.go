@@ -1,0 +1,90 @@
+package lib
+
+import (
+	"errors"
+	"fmt"
+	"jryghq.cn/lib/g"
+	"sync"
+)
+
+type GoDict struct {
+	m     map[string]*Dict
+	mutex *sync.Mutex
+}
+
+func (self *GoDict) GoDict() *GoDict {
+	self.m = make(map[string]*Dict)
+	self.mutex = new(sync.Mutex)
+	return self
+}
+
+func (self *GoDict) Set(key string, value interface{}) {
+	defer self.mutex.Unlock()
+	id := self.goPoint()
+	self.mutex.Lock()
+
+	dict, ok := self.m[id]
+	if !ok {
+		dict = new(Dict).Dict()
+		self.m[id] = dict
+	}
+	dict.Set(key, value)
+	return
+}
+
+func (self *GoDict) Get(key string) interface{} {
+	defer self.mutex.Unlock()
+	id := self.goPoint()
+	self.mutex.Lock()
+	v, ok := self.m[id]
+	if !ok {
+		return nil
+	}
+
+	return v.GetInterface(key)
+}
+
+func (self *GoDict) Eval(key string, value interface{}) error {
+	defer self.mutex.Unlock()
+	id := self.goPoint()
+	self.mutex.Lock()
+	v, ok := self.m[id]
+	if !ok {
+		return errors.New("undefined key:" + key)
+	}
+	return v.Get(key, value)
+}
+
+func (self *GoDict) Del(key string) {
+	defer self.mutex.Unlock()
+	id := self.goPoint()
+	self.mutex.Lock()
+
+	v, ok := self.m[id]
+	if !ok {
+		return
+	}
+	v.Del(key)
+}
+
+func (self *GoDict) Remove() {
+	defer self.mutex.Unlock()
+	id := self.goPoint()
+	self.mutex.Lock()
+	v, ok := self.m[id]
+	if ok {
+		v.DelAll()
+	}
+	delete(self.m, id)
+}
+
+// func (self *GoDict) goId() string {
+// 	var buf [64]byte
+// 	n := runtime.Stack(buf[:], false)
+// 	idField := strings.Fields(strings.TrimPrefix(string(buf[:n]), "goroutine "))[0]
+// 	return idField
+// }
+
+func (self *GoDict) goPoint() string {
+	return fmt.Sprint(g.RuntimePointer())
+}
