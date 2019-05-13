@@ -1,34 +1,3 @@
-// Copyright 2014 beego Author. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-// Package httplib is used as http.Client
-// Usage:
-//
-// import "github.com/astaxie/beego/httplib"
-//
-//	b := httplib.Post("http://beego.me/")
-//	b.Param("username","astaxie")
-//	b.Param("password","123456")
-//	b.PostFile("uploadfile1", "httplib.pdf")
-//	b.PostFile("uploadfile2", "httplib.txt")
-//	str, err := b.String()
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//	fmt.Println(str)
-//
-//  more docs http://beego.me/docs/module/httplib.md
 package helper
 
 import (
@@ -51,7 +20,7 @@ import (
 	"time"
 )
 
-var defaultSetting = _BeegoHTTPSettings{
+var defaultSetting = _GotreeHTTPSettings{
 	UserAgent:        "gotree",
 	ConnectTimeout:   60 * time.Second,
 	ReadWriteTimeout: 60 * time.Second,
@@ -70,14 +39,14 @@ func createDefaultCookie() {
 }
 
 // SetDefaultSetting Overwrite default settings
-// func SetDefaultSetting(setting _BeegoHTTPSettings) {
+// func SetDefaultSetting(setting _GotreeHTTPSettings) {
 // 	settingMutex.Lock()
 // 	defer settingMutex.Unlock()
 // 	defaultSetting = setting
 // }
 
-// _NewBeegoRequest return *HTTPRequest with specific method
-func _NewBeegoRequest(rawurl, method string) *HTTPRequest {
+// _NewGotreeRequest return *HTTPRequest with specific method
+func _NewGotreeRequest(rawurl, method string) *HTTPRequest {
 	var resp http.Response
 	u, err := url.Parse(rawurl)
 	if err != nil {
@@ -103,31 +72,31 @@ func _NewBeegoRequest(rawurl, method string) *HTTPRequest {
 
 // Get returns *HTTPRequest with GET method.
 func HttpGet(url string) *HTTPRequest {
-	return _NewBeegoRequest(url, "GET")
+	return _NewGotreeRequest(url, "GET")
 }
 
 // Post returns *HTTPRequest with POST method.
 func HttpPost(url string) *HTTPRequest {
-	return _NewBeegoRequest(url, "POST")
+	return _NewGotreeRequest(url, "POST")
 }
 
 // Put returns *HTTPRequest with PUT method.
 func HttpPut(url string) *HTTPRequest {
-	return _NewBeegoRequest(url, "PUT")
+	return _NewGotreeRequest(url, "PUT")
 }
 
 // Delete returns *HTTPRequest DELETE method.
 func HttpDelete(url string) *HTTPRequest {
-	return _NewBeegoRequest(url, "DELETE")
+	return _NewGotreeRequest(url, "DELETE")
 }
 
 // Head returns *HTTPRequest with HEAD method.
 func HttpHead(url string) *HTTPRequest {
-	return _NewBeegoRequest(url, "HEAD")
+	return _NewGotreeRequest(url, "HEAD")
 }
 
-// BeegoHTTPSettings is the http.Client setting
-type _BeegoHTTPSettings struct {
+// GotreeHTTPSettings is the http.Client setting
+type _GotreeHTTPSettings struct {
 	ShowDebug        bool
 	UserAgent        string
 	ConnectTimeout   time.Duration
@@ -148,7 +117,7 @@ type HTTPRequest struct {
 	req     *http.Request
 	params  map[string][]string
 	files   map[string]string
-	setting _BeegoHTTPSettings
+	setting _GotreeHTTPSettings
 	resp    *http.Response
 	body    []byte
 	dump    []byte
@@ -160,7 +129,7 @@ func (b *HTTPRequest) GetRequest() *http.Request {
 }
 
 // Setting Change request settings
-func (b *HTTPRequest) Setting(setting _BeegoHTTPSettings) *HTTPRequest {
+func (b *HTTPRequest) Setting(setting _GotreeHTTPSettings) *HTTPRequest {
 	b.setting = setting
 	return b
 }
@@ -209,7 +178,7 @@ func (b *HTTPRequest) DumpRequest() []byte {
 	return b.dump
 }
 
-// SetTimeout sets connect time out and read-write time out for BeegoRequest.
+// SetTimeout sets connect time out and read-write time out for GotreeRequest.
 func (b *HTTPRequest) SetTimeout(connectTimeout, readWriteTimeout time.Duration) *HTTPRequest {
 	b.setting.ConnectTimeout = connectTimeout
 	b.setting.ReadWriteTimeout = readWriteTimeout

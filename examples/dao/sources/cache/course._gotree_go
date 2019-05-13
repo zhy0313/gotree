@@ -18,14 +18,14 @@ import (
 	}
 
 	func (self *CacheBase) Gotree(child ...interface{}) *CacheBase {
-		self.DaoCache.Gotree
+		self.DaoCache.Gotree(self)
 		self.AddChild(self, child...)
 		return self
 	}
 
 	//提供给业务子类的调用处理
 	func (self *CacheBase) XXXXX() {
-		self.Do()
+		self.Do("xx", "xx")
 	}
 */
 
@@ -65,12 +65,12 @@ func (self *Course) TestSet(i int, s string) {
 func (self *Course) TestGet() (result struct {
 	CourseInt    int
 	CourseString string
-}, exists bool) {
+}, err error) {
 
 	strData, err := redis.Bytes(self.Do("GET", "Feature"))
 	if err != nil {
 		return
 	}
-	json.Unmarshal(strData, &result)
+	err = json.Unmarshal(strData, &result)
 	return
 }

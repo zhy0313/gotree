@@ -1,10 +1,13 @@
 package helper
 
 import (
+	"errors"
 	"os"
 	"runtime"
 	"strings"
 )
+
+var ErrBreaker = errors.New("熔断")
 
 type VoidValue struct {
 	Void byte

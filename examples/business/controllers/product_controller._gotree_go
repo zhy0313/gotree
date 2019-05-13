@@ -45,6 +45,9 @@ func (self *ProductController) Store(cmd business_cmd.Store, result *business_va
 
 	self.Service(&productSer)
 	result.List, e = productSer.Store()
+
+	//self.RemoteAddr() 远程rpc ip地址
+	helper.Log().WriteInfo("gateway ip:", self.RemoteAddr())
 	return
 }
 

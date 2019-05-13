@@ -71,9 +71,19 @@ func (self *Product) Store() (result []struct {
 	cmdPt := new(dao_cmd.ProductGetList).Gotree([]int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15})
 	store := dao_value.ProductGetList{}
 	e = self.CallDao(cmdPt, &store)
+	if e == helper.ErrBreaker {
+		//熔断处理
+		helper.Log().WriteInfo("Store ErrBreaker")
+		return
+	}
 	if e != nil {
 		return
 	}
+
+	//反射升序排序
+	helper.SliceSortReverse(&store.List, "Id")
+	//反射降序排序
+	helper.SliceSort(&store.List, "Id")
 	result = store.List
 	return
 }

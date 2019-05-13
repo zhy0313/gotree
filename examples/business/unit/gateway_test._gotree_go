@@ -20,6 +20,10 @@ func TestUserRegister(t *testing.T) {
 	userName := fmt.Sprintf("gotree_%d", rand.Intn(999999))
 	cmd := new(business_cmd.UserRegister).Gotree(userName)
 	value := business_value.UserRegister{}
+
+	//header
+	cmd.SetHeader("test_head", "TestUserRegisterHeader")
+	// cmd.SetHttpHeader() 可直接设置http头
 	e := api.RpcClient().Call(cmd, &value)
 	t.Log(value, e)
 }

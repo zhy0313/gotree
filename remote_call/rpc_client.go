@@ -1,3 +1,17 @@
+// Copyright gotree Author. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package remote_call
 
 import (
@@ -73,12 +87,11 @@ func (self *RpcClient) Call(obj interface{}, reply interface{}) (err error) {
 	}
 
 	defer func() {
-		if !self.innerMaster.ping && !identityUse && (err == nil || err != unknownNetwork || err != errBreaker) {
+		if !self.innerMaster.ping && !identityUse && (err == nil || err != unknownNetwork || err != helper.ErrBreaker) {
 			//无错误或非网络错误 并且 非cmd缓存 加入统计
 			self.qps(cmd.ServiceMethod(), time.Now().UnixNano()/1e6-beginMs)
 		}
 		if err != nil {
-			err = errors.New(cmd.ServiceMethod() + ": " + err.Error())
 			return
 		}
 		//如果未开启缓存 并且使用缓存获取的数据不处理
@@ -89,7 +102,7 @@ func (self *RpcClient) Call(obj interface{}, reply interface{}) (err error) {
 		gotree_rpc.GoDict().Set(identity, cacheValue)
 	}()
 	if self.rpcBreak.Breaking(cmd) {
-		return errBreaker
+		return helper.ErrBreaker
 	}
 	cacheIdentity := cmd.Cache()
 	if cacheIdentity != nil {
@@ -231,4 +244,3 @@ var ErrConnect = errors.New("dial is fail")
 var ErrNetwork = errors.New("connection is shut down")
 var Unexpected = errors.New("unexpected EOF")
 var unknownNetwork = errors.New("未知网络错误")
-var errBreaker = errors.New("熔断")
