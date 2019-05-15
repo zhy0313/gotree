@@ -26,51 +26,46 @@ import (
 	"github.com/8treenet/gotree/helper"
 )
 
+var (
+	pcode map[string]string
+)
+
+func init() {
+	pcode = make(map[string]string)
+	pcode["12f814f"] = "business"
+	pcode["12ec006"] = "dao"
+	pcode["business"] = "12f814f"
+	pcode["dao"] = "12ec006"
+}
+
 func AppDaemon() {
+	if e := helper.LoadConfig(pcode[os.Args[1]]); e != nil {
+		fmt.Println(e)
+		return
+	}
+	dir := helper.Config().DefaultString("sys::LogDir", "log")
+	helper.Log().Init(dir, nil)
+	startSecs := helper.Config().DefaultInt64("sys::StartSecs", 3)
+
 	for {
 		var stderr bytes.Buffer
 		cmd := exec.Command(os.Args[0])
 		cmd.Stderr = &stderr
+
+		startTime := time.Now().Unix()
 		cmd.Start()
 		err := cmd.Wait()
 		if err == nil {
 			os.Exit(0)
 		}
-
-		helper.Log().WriteDaemonError("异常错误,10秒后开始重启 :", stderr.String())
-		time.Sleep(10 * time.Second)
-	}
-}
-
-func AppStart(name, addr string, port int) {
-	over := make(chan bool, 1)
-	go func() {
-		for i := 0; i != 10; i = i + 1 {
-			fmt.Fprintf(os.Stdout, "启动进度 : %%%d\r", i*10)
-			time.Sleep(time.Millisecond * 300)
+		//启动时间和panic时间 如果在3秒内 停止服务
+		if time.Now().Unix()-startTime <= startSecs {
+			helper.Log().WriteDaemonError("异常错误:", stderr.String())
+			os.Exit(1)
 		}
-		over <- true
-	}()
 
-	for index := 0; index < 10; index++ {
-		_, err := jsonrpc.Dial("tcp", fmt.Sprintf("%s:%d", addr, port+index))
-		if err == nil {
-			fmt.Println(name+" 正在运行中 :", fmt.Sprintf("%s:%d", addr, port+index))
-			os.Exit(0)
-		}
-	}
-
-	cmdStart := exec.Command("nohup", os.Args[0], "daemon", "&")
-	err := cmdStart.Start()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
-	}
-
-	<-over
-	if err == nil {
-		fmt.Printf("启动进度 :%%%d\n", 100)
-		fmt.Println("启动"+name+" daemon pid:", cmdStart.Process.Pid)
+		helper.Log().WriteDaemonError("异常错误,2秒后开始重启 :", stderr.String())
+		time.Sleep(2 * time.Second)
 	}
 }
 
@@ -93,26 +88,58 @@ func AppStop(name, addr string, port int) {
 	}
 }
 
-func AppRestart(name, addr string, port int) {
-	over := make(chan bool, 1)
-	go func() {
-		for i := 0; i != 10; i = i + 1 {
-			fmt.Fprintf(os.Stdout, "重启进度 : %%%d\r", i*10)
-			time.Sleep(time.Millisecond * 300)
+func newPid(name, addr string, port int) (pid int) {
+	for index := 0; index < 10; index++ {
+		client, err := jsonrpc.Dial("tcp", fmt.Sprintf("%s:%d", addr, port+index))
+		if err != nil {
+			continue
 		}
-		over <- true
+		if client.Call("InnerServer.ProcessId", 100, &pid) != nil {
+			continue
+		}
+		return
+	}
+	return
+}
+
+func AppRestart(name, addr string, port int) {
+	if e := helper.LoadConfig(name); e != nil {
+		fmt.Println(e)
+		return
+	}
+	startSecs := helper.Config().DefaultInt64("sys::StartSecs", 3)
+	sleepMs := startSecs * 1000.0 / 10.0
+	over := make(chan int, 1)
+	go func() {
+		pid := 0
+		for i := 0; i != 10; i = i + 1 {
+			if i > 4 {
+				pid = newPid(name, addr, port)
+				if pid != 0 {
+					fmt.Fprintf(os.Stdout, "重启进度 : %%%d\r", 100)
+					break
+				}
+			}
+			fmt.Fprintf(os.Stdout, "重启进度 : %%%d\r", i*10)
+			time.Sleep(time.Millisecond * time.Duration(sleepMs))
+		}
+		if pid == 0 {
+			fmt.Println("启动失败，查看error日志。")
+			os.Exit(1)
+		}
+		over <- pid
 	}()
 
 	AppStop(name, addr, port)
-	cmdStart := exec.Command("nohup", os.Args[0], "daemon", "&")
+	cmdStart := exec.Command("nohup", os.Args[0], "daemon", pcode[name], "&")
 	err := cmdStart.Start()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(-1)
 	}
-	<-over
+	newpid := <-over
 	if err == nil {
 		fmt.Printf("重启进度 : %%%d\n", 100)
-		fmt.Println("启动"+name+" daemon pid:", cmdStart.Process.Pid)
+		fmt.Println("启动"+name+" pid:", newpid)
 	}
 }

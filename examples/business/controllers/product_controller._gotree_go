@@ -10,12 +10,12 @@ import (
 	"github.com/8treenet/gotree/helper"
 )
 
-type ProductController struct {
-	business.BusinessController
-}
-
 func init() {
 	business.RegisterController(new(ProductController).Gotree())
+}
+
+type ProductController struct {
+	business.BusinessController
 }
 
 //Gotree

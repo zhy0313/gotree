@@ -147,18 +147,14 @@ func appStart() {
 		os.Exit(0)
 		return
 	}
-	if helper.InSlice(os.Args, "start") {
-		lib.AppStart("businesss", list[0], port)
-		os.Exit(0)
-		return
-	}
-	if helper.InSlice(os.Args, "restart") {
-		lib.AppRestart("businesss", list[0], port)
+
+	if helper.InSlice(os.Args, "restart") || helper.InSlice(os.Args, "start") {
+		lib.AppRestart("business", list[0], port)
 		os.Exit(0)
 		return
 	}
 	if helper.InSlice(os.Args, "stop") {
-		lib.AppStop("businesss", list[0], port)
+		lib.AppStop("business", list[0], port)
 		os.Exit(0)
 		return
 	}

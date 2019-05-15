@@ -12,12 +12,12 @@ import (
 	"github.com/8treenet/gotree/helper"
 )
 
-type UserController struct {
-	hook.UserHook
-}
-
 func init() {
 	business.RegisterController(new(UserController).Gotree())
+}
+
+type UserController struct {
+	hook.UserHook
 }
 
 // Gotree

@@ -62,12 +62,7 @@ func appStart() {
 		os.Exit(0)
 		return
 	}
-	if helper.InSlice(os.Args, "start") {
-		lib.AppStart("dao", list[0], port)
-		os.Exit(0)
-		return
-	}
-	if helper.InSlice(os.Args, "restart") {
+	if helper.InSlice(os.Args, "restart") || helper.InSlice(os.Args, "start") {
 		lib.AppRestart("dao", list[0], port)
 		os.Exit(0)
 		return

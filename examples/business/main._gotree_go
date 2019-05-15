@@ -8,5 +8,9 @@ import (
 )
 
 func main() {
+	// go func() {
+	// 	time.Sleep(time.Duration(helper.Config().DefaultInt64("StartSecs", 3)+1) * time.Second)
+	// 	panic("测试督程重启")
+	// }()
 	business.Run()
 }
