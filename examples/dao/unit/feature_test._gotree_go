@@ -1,0 +1,22 @@
+package unit
+
+import (
+	"examples/dao/sources/cache"
+	"examples/dao/sources/memory"
+	"testing"
+)
+
+//go test -v -run TestCache $GOPATH/src/examples/dao/unit/feature_test.go
+func TestCache(t *testing.T) {
+	c := new(cache.Course).Gotree()
+	c.TestOn()
+	c.TestSet(123, "test")
+	t.Log(c.TestGet())
+}
+
+func TestMemory(t *testing.T) {
+	c := new(memory.Course).Gotree()
+	c.TestOn()
+	c.TestSet(123, "test")
+	t.Log(c.TestGet())
+}

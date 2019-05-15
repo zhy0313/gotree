@@ -36,21 +36,30 @@ func (self *Feature) Simple() (result []struct {
 	Value string
 	Pos   float64
 }, e error) {
+	//匿名结构体的 map
+	var mapFeature map[int]struct {
+		Id    int
+		Value string
+	}
+	helper.NewMap(&mapFeature)
+
+	//匿名结构体的 数组
 	var newFeatures []struct {
 		Id    int
 		Value string
 	}
-
-	//反射创造一个长度为2的匿名数组
 	if e = helper.NewSlice(&newFeatures, 2); e != nil {
 		return
 	}
 	for index := 0; index < len(newFeatures); index++ {
 		newFeatures[index].Id = index + 1
 		newFeatures[index].Value = "hello"
+
+		//匿名数组结构体赋值赋值给 匿名map结构体
+		mapFeature[index] = newFeatures[index]
 	}
 
-	//拷贝内存到 result，因为 newFeatures 没有Pos字段，故result.Pos默认0
+	//内存拷贝，支持数组，结构体。
 	if e = helper.Memcpy(&result, newFeatures); e != nil {
 		return
 	}
@@ -59,5 +68,17 @@ func (self *Feature) Simple() (result []struct {
 	helper.SliceSortReverse(&result, "Id")
 	//反射降序排序
 	helper.SliceSort(&result, "Id")
+
+	//group go并发
+	group := helper.NewGroup()
+	group.Add(func() error {
+		//这块代码是go并发里跑的
+		//这块代码是go并发里跑的
+		//这块代码是go并发里跑的
+		return nil
+	})
+
+	err := group.Wait()
+	helper.Log().WriteInfo(err)
 	return
 }

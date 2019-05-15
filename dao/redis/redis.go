@@ -16,7 +16,6 @@ package redis
 
 import (
 	"errors"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -75,9 +74,16 @@ func NewCache(connection string, password string, dbNum int, idle int, maxOpen i
 		MaxIdle:     idle,
 		IdleTimeout: 600 * time.Second,
 		MaxActive:   maxOpen,
+		Wait:        true,
+		TestOnBorrow: func(c redis.Conn, t time.Time) error {
+			if time.Since(t) < time.Minute {
+				return nil
+			}
+			_, err := c.Do("PING")
+			return err
+		},
 		Dial: func() (c redis.Conn, err error) {
 			c, err = redis.DialTimeout("tcp", connection, 3*time.Second, 15*time.Second, 15*time.Second)
-			//c, err = redis.Dial("tcp", connection)
 			if err != nil {
 				return
 			}
@@ -116,23 +122,8 @@ func NewCache(connection string, password string, dbNum int, idle int, maxOpen i
 }
 
 //GetRc 获取连接池中的链接
-func (rc *Cache) getRc() (redis.Conn, error) {
-	defer rc.mutex.Unlock()
-	rc.mutex.Lock()
-	u := time.Now().Unix()
-	for {
-		//当前正在活动中的链接 小于最大链接 = 有空闲链接
-		if rc.p.ActiveCount() < rc.p.MaxActive {
-			return rc.p.Get(), nil
-		}
-
-		//没有空闲链接且等待15秒 返回超时
-		if time.Now().Unix()-u > 15 {
-			break
-		}
-		runtime.Gosched()
-	}
-	return nil, errors.New("timeout")
+func (rc *Cache) getRc() redis.Conn {
+	return rc.p.Get()
 }
 
 // actually do the redis cmds
@@ -141,10 +132,7 @@ func (rc *Cache) do(commandName string, args ...interface{}) (reply interface{},
 		helper.Log().WriteError("运行中不可以切库")
 	}
 
-	c, err := rc.getRc()
-	if err != nil {
-		return nil, err
-	}
+	c := rc.getRc()
 	defer c.Close()
 	return c.Do(commandName, args...)
 }

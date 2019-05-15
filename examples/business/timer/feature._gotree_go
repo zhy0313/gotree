@@ -42,6 +42,7 @@ func (self *Feature) CourseTick() {
 	)
 	helper.Log().WriteWarn("CourseTick")
 	self.Service(&featureSer)
+
 	self.Async(func(ac business.AsyncController) {
 		featureSer.Course()
 	})

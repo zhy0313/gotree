@@ -52,6 +52,9 @@ func (self *DaoMemory) TestOn() {
 		os.Exit(1)
 	}
 	self.DaoInit()
+	if helper.Config().DefaultString("dao_on::"+self.daoName, "") == "" {
+		panic("未找到 dao.conf dao_on 域下的组件 " + self.daoName)
+	}
 	self.open = true
 }
 

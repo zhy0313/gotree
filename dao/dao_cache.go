@@ -47,6 +47,9 @@ func (self *DaoCache) TestOn() {
 		panic("生产环境不可以使用单元测试cache")
 	}
 	self.DaoInit()
+	if helper.Config().DefaultString("dao_on::"+self.daoName, "") == "" {
+		panic("未找到 dao.conf dao_on 域下的组件 " + self.daoName)
+	}
 	self.redisOn()
 }
 
@@ -115,7 +118,7 @@ func (self *DaoCache) redisOn() {
 	}
 
 	db, _ := strconv.Atoi(m["database"])
-	helper.Log().WriteInfo("connect redis: MaxIdleConns:" + maxIdleConns + "MaxOpenConns:" + maxOpenConns + " config:" + fmt.Sprint(m))
+	helper.Log().WriteInfo("connect redis: MaxIdleConns:" + maxIdleConns + " MaxOpenConns:" + maxOpenConns + " config:" + fmt.Sprint(m))
 	client, e := redis.NewCache(m["server"], m["password"], db, imaxIdleConns, imaxOpenConns)
 	if e != nil {
 		helper.Log().WriteError(e)
