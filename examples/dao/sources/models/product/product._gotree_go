@@ -8,23 +8,23 @@ import (
 	"github.com/8treenet/gotree/helper"
 )
 
-// Product
-type Product struct {
-	dao.DaoModel
-}
-
 func init() {
 	dao.RegisterModel(new(Product).Gotree())
 }
 
+// Product
+type Product struct {
+	dao.ComModel
+}
+
 // Gotree
 func (self *Product) Gotree() *Product {
-	self.DaoModel.DaoModel(self)
+	self.ComModel.ComModel(self)
 	return self
 }
 
-// Dao
-func (self *Product) Dao() string {
+// Com
+func (self *Product) Com() string {
 	return "Product"
 }
 

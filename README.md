@@ -4,17 +4,30 @@ gotree 是一个垂直分布式框架。 gotree 的目标是轻松开发分布�
 
 ## 特性
 * 熔断
-* 平滑升级
+* fork 热更新
 * rpc 通信(c50k)
 * 定时器
 * SQL 慢查询监控
 * SQL 冗余监控
 * 分层
 * 强制垂直分库
-* 基于 seq 串行的全局日志，多机器之间
+* 基于 gseq 串行的全网日志
 * 单元测试
 * 督程
 * 一致性哈希、主从、随机、均衡等负载方式
+
+## 介绍
+- [快速使用](#快速使用)
+- [描述](#描述)
+- [分层](#分层)
+- [Gateway](#使用gateway)
+- [BusinessController](#使用BusinessController)
+- [BusinessService](#使用BusinessService)
+- [BusinessCmd](#使用Protocol-business_cmd)
+- [DaoCmd](#使用Protocol-dao_cmd)
+- [ComController](#使用ComController)
+- [ComModel](#使用ComModel)
+
 
 ## 快速使用
 
@@ -61,12 +74,11 @@ $ go test -v -count=1 -run TestUserOrder $GOPATH/src/learning/business/unit/gate
 $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
 ```
 
-
 ## 快速入门  
 
 ### 描述
 + Business 主要用于逻辑功能处理等。均衡负载部署多台，为网关提供服务。 目录结构在 learning/business。
-+ Dao 主要用于数据功能处理，组织低级数据提供给上游 business。负载方式较多，可根据数据分布来设计。可通过配置来开启组件。目录结构在 learning/dao。
++ Dao 主要用于数据功能处理，组织低级数据提供给上游 business。Dao 基于容器设计，开发 Com 挂载不同的 Dao 容器上。负载均衡方式较多，可根据数据分布来设计。可通过配置来开启 Com(Component Object Model)。目录结构在 learning/dao。
 + Protocol 通信协议 business_cmd/value 作用于 Api网关和 Business 通信。 dso_cmd/value 作用于 Business 和 Dao 通信。 目录结构在 learning/protocol。
 
 > 3台网关、2台business、3台dao 组成的集群
@@ -78,9 +90,9 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
 > Dao-1        | Dao-2        | Dao-3
 
 ### 分层
-架构主要分为4层。第一层基类 __BusinessController__，作为 Business 的入口控制器, 主要职责有组织和协调Service、逻辑处理。 第二层基类 __BusinessService__, 作为 __BusinessController__ 的下沉层， 主要下沉的职责有拆分、治理、解耦、复用、使用Dao。 第三次基类 __DaoController__ ，作为 Dao 的入口控制器，主要职责有组织数据、解耦数据和逻辑、抽象数据源、使用数据源。 第四层数据源基类 __DaoModel__ 数据库表模型数据源基类、 __DaoMemory__ 内存数据源基类、 __DaoCache__ redis数据源基类、 __DaoApi__ Http数据源基类。
+架构主要分为4层。第一层基类 __BusinessController__，作为 Business 的入口控制器, 主要职责有组织和协调Service、逻辑处理。 第二层基类 __BusinessService__, 作为 __BusinessController__ 的下沉层， 主要下沉的职责有拆分、治理、解耦、复用、使用Dao。 第三次基类 __ComController__ ，作为 Dao 的入口控制器，主要职责有组织数据、解耦数据和逻辑、抽象数据源、使用数据源。 第四层数据源基类 __ComModel__ 数据库表模型数据源基类、 __ComMemory__ 内存数据源基类、 __ComCache__ redis数据源基类、 __ComApi__ Http数据源基类。
 
-### 使用 gateway
+### 使用gateway
 ```go
 /*
     1. 模拟api网关调用，等同 beego、gin 等api gateway, 以及 tcp 网关项目.
@@ -106,17 +118,17 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
 	}
 ```
 
-### 使用 BusinessController  
+### 使用BusinessController  
 ```go
     /* 
-         learning/business/controllers/controllers.go
+         learning/business/controllers/product_controller.go
     */
     func init() {
         //注册 ProductController 控制器
         business.RegisterController(new(ProductController).Gotree())
     }
 
-    //定义一个电商的商品控制器。
+    //定义一个电商的商品控制器。控制器命名 `Name`Controller
     type ProductController struct {
         //继承 business 控制器的基类
 	    business.BusinessController
@@ -147,11 +159,12 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
     */
     func (self *ProductController) Store(cmd business_cmd.Store, result *business_value.Store) (e error) {
         var (
+            //创建一个 service包里的  Product 对象指针
             productSer *service.Product
         )
         *result = business_value.Store{}
 
-        //通过 父类 Service 方法 取出 service.Product 类型的服务对象。
+        //通过 父类 Service 方法获取 service.Product 类型的服务对象。
         //因为 go 没有泛型，实现服务定位器模式，只可依赖二级指针，不用管原理，直接取。
         self.Service(&productSer)
 
@@ -161,13 +174,13 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
     }
 ```
 
-### 使用 BusinessService
+### 使用BusinessService
 ```go
     /* 
          learning/business/service/product.go
     */
     func init() {
-        //注册 service
+        //注册 service 于控制器 self.Service(&) 关联
         business.RegisterService(new(Product).Gotree())
     }
 
@@ -194,7 +207,7 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
         //创建 dao返回数据
         store := dao_value.ProductGetList{}
 
-        //CallDao 调用远程服务器的dao 入参cmdPt 出参store
+        //CallDao 调用 Dao 服务器的 Com 入参cmdPt 出参store
         e = self.CallDao(cmdPt, &store)
         if e == helper.ErrBreaker {
             //熔断处理
@@ -206,11 +219,183 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
     }
 ```
 
-### 使用  Protocol
+### 使用Protocol-business_cmd
 ```go
     /* 
-        business 远程调用 learning/protocol/business_cmd/product.go
-        dao 远程调用 learning/protocol/dao_cmd/product.go
+        learning/protocol/business_cmd/product.go
+    */
+    func init() {
+        //Store 加入熔断 条件:15秒内 %50超时, 60秒后恢复
+        rc.RegisterBreaker(new(Store), 15, 0.5, 60)
+    }
+
+    // 定义访问 business product 控制器的命令基类， 所有的 business.product 动作调用，继承于这个基类
+    type productCmdBase struct {
+        rc.RpcCmd //所有远程调用的基类
+    }
+
+    // Gotree 风格构造，因为是基类，参数需要暴露 child
+    func (self *productCmdBase) Gotree(child ...interface{}) *productCmdBase {
+        self.RpcCmd.Gotree(self)
+        self.AddChild(self, child...)
+        // self.AddChild 继承原型链, 用于以后实现多态。
+        return self
+    }
+
+    // 多态方法重写 Control。用于定位该命令，要访问的控制器。 这里填写 "Product" 控制器
+    func (self *productCmdBase) Control() string {
+        return "Product"
+    }
+
+
+    // 定义一个 product 的动作调用
+    type Store struct {
+        productCmdBase  //继承productCmdBase
+        Ids            []int64
+        TestEmpty     int `opt:"empty"` //如果值为 []、""、0,加入此 tag ,否则会报错!
+    }
+
+    func (self *Store) Gotree(ids []int64) *Store {
+        //调用父类 productCmdBase.Gotree 传入自己的对象指针
+        self.productCmdBase.Gotree(self)
+        self.Ids = ids
+        return self
+    }
+
+    // 多态方法 重写 Action。用于定位该命令，要访问控制器里的 Action。 这里填写 "Store" 动作
+    func (self *Store) Action() string {
+        return "Store"
+    }
+```
+
+### 使用Protocol-dao_cmd
+```go
+    /* 
+        learning/protocol/dao_cmd/product.go
     */
 
+    // 定义访问 dao product 控制器的命令基类， 所有的 dao.product 动作调用，继承于这个基类
+    type productCmdBase struct {
+        rc.RpcCmd
+    }
+
+    func (self *productCmdBase) Gotree(child ...interface{}) *productCmdBase {
+        self.RpcCmd.Gotree(self)
+        self.AddChild(self, child...)
+        return self
+    }
+
+    // 上文已介绍
+    func (self *productCmdBase) Control() string {
+        return "Product"
+    }
+
+    // 多态方法重写 ComAddr 用于多 Dao节点 时的分布规则，当前返回随机节点
+    func (self *productCmdBase) ComAddr(rn rc.ComNode) string {
+        //分布于com.conf配置相关
+        //rn.RandomAddr() 随机节点访问
+        //rn.BalanceAddr() 负载均衡节点访问
+        //rn.DummyHashAddr(self.productId) 一致性哈希节点访问
+        //rn.AllNode() 获取全部节点,自定义方式访问
+        //rn.SlaveAddr()  //返回随机从节点  主节点:节点id=1,当只有主节点返回主节点
+        //rn.MasterAddr() //返回主节点 主节点:节点id=1
+        return rn.RandomAddr()
+    }
+
+    // 定义一个 ProductGetList 的动作调用
+    type ProductGetList struct {
+        productCmdBase //继承productCmdBase
+        Ids            []int64
+    }
+
+    func (self *ProductGetList) Gotree(ids []int64) *ProductGetList {
+        self.productCmdBase.Gotree(self)
+        self.Ids = ids
+        return self
+    }
+
+    // 多态方法 重写 Action。
+    func (self *ProductGetList) Action() string {
+        return "GetList"
+    }
 ```
+
+### 使用ComController
+```go
+    /* 
+         learning/dao/controllers/product_controller.go
+         Dao 组件入口控制器， 关联dao_cmd
+    */
+    func init() {
+        // 注册 Product 数据控制器入口
+        dao.RegisterController(new(ProductController).Gotree())
+    }
+
+    // 定义Com控制器，控制器对象命名 `Name`Controller，`Name` 等同 Com， 继承控制器基类 dao.ComController
+    type ProductController struct {
+        dao.ComController
+    }
+
+    // Gotree
+    func (self *ProductController) Gotree() *ProductController {
+        self.ComController.Gotree(self)
+        return self
+    }
+
+    // 实现动作 GetList
+    func (self *ProductController) GetList(cmd dao_cmd.ProductGetList, result *dao_value.ProductGetList) (e error) {
+        var (
+            //创建一个 sources.models 包里的 Product 对象指针, sources.models : 数据库表模型
+            mProduct *product.Product
+        )
+        *result = dao_value.ProductGetList{}
+        // 服务定位器获取 product.Product 实例
+        self.Model(&mProduct)
+        // 取数据库数据赋值给出参 result.List
+        result.List, e = mProduct.Gets(cmd.Ids)
+        return
+    }
+```
+
+### 使用ComModel
+```go
+    func init() {
+        //注册 Product 模型
+        dao.RegisterModel(new(Product).Gotree())
+    }
+
+    // 定义一个模型 Product 继承模型基类 ComModel
+    type Product struct {
+        dao.ComModel
+    }
+
+    // Gotree
+    func (self *Product) Gotree() *Product {
+        self.ComModel.ComModel(self)
+        return self
+    }
+
+    //多态方法 重写 主要用于返回这个 model 归属的Com, com.conf 统一控制组件开启
+    func (self *Product) Com() string {
+        return "Product"
+    }
+
+    // Gets
+    func (self *Product) Gets(productId []int64) (list []struct {
+        Id    int64
+        Price int64
+        Desc  string
+    }, e error) {
+        /*
+            FormatPlaceholder()  :处理转数组为 ?,?,?
+            FormatArray() : 处理数组为 value,value,value
+            self.Conn().Raw() : 获取连接执行sql语句
+            QueryRows() : 获取多行数据
+        */
+        sql := fmt.Sprintf("SELECT id,price,`desc` FROM `product` where id in(%s)", self.FormatPlaceholder(productId))
+        _, e = self.Conn().Raw(sql, self.FormatArray(productId)...).QueryRows(&list)
+        return
+    }
+```
+
+## 高级教程

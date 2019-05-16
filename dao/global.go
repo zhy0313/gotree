@@ -15,7 +15,6 @@
 package dao
 
 import (
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -27,18 +26,18 @@ import (
 	"github.com/8treenet/gotree/remote_call"
 )
 
-type daoName interface {
-	Dao() string
+type comName interface {
+	Com() string
 }
 
 var _msl *lib.ServiceLocator //模型服务定位器
 var _csl *lib.ServiceLocator //缓存服务定位器
 var _esl *lib.ServiceLocator //内存服务定位器
 var _api *lib.ServiceLocator //api服务定位器
-var _daoOnList []daoNode
+var _daoOnList []comNode
 var queueMap map[string]*daoQueue
 
-type daoNode struct {
+type comNode struct {
 	Name  string
 	Id    int
 	Extra []interface{}
@@ -84,8 +83,7 @@ func RegisterModel(service interface{}) {
 	}
 	service.(init).DaoInit()
 	if _msl.CheckService(service) {
-		helper.Log().WriteError("RegisterModel 重复注册")
-		panic("RegisterModel 重复注册")
+		helper.Exit("RegisterModel 重复注册")
 	}
 	_msl.AddService(service)
 }
@@ -100,8 +98,7 @@ func RegisterCache(service interface{}) {
 	}
 	service.(init).DaoInit()
 	if _csl.CheckService(service) {
-		helper.Log().WriteError("RegisterCache 重复注册")
-		panic("RegisterCache 重复注册")
+		helper.Exit("RegisterCache 重复注册")
 	}
 	_csl.AddService(service)
 }
@@ -116,8 +113,7 @@ func RegisterMemory(service interface{}) {
 	}
 	service.(init).DaoInit()
 	if _esl.CheckService(service) {
-		helper.Log().WriteError("RegisterMemory 重复注册")
-		panic("RegisterMemory 重复注册")
+		helper.Exit("RegisterMemory 重复注册")
 	}
 	_esl.AddService(service)
 }
@@ -128,8 +124,7 @@ func RegisterApi(service interface{}) {
 		return
 	}
 	if _api.CheckService(service) {
-		helper.Log().WriteError("RegisterApi 重复注册")
-		panic("RegisterApi 重复注册")
+		helper.Exit("RegisterApi 重复注册")
 	}
 	_api.AddService(service)
 }
@@ -145,7 +140,7 @@ func RegisterQueue(controller interface{}, queueName string, queueLen int, gorou
 
 	rc, ok := controller.(rpcname)
 	if !ok {
-		panic("RegisterQueue error")
+		helper.Exit("RegisterQueue error")
 	}
 	dao := rc.RpcName()
 	mgo := 1
@@ -159,10 +154,9 @@ func RegisterQueue(controller interface{}, queueName string, queueLen int, gorou
 
 //daoOn 开启dao
 func daoOn() {
-	openDao, err := helper.Config().GetSection("dao_on")
+	openDao, err := helper.Config().GetSection("com_on")
 	if err != nil {
-		helper.Log().WriteError("未找到 dao dao_on:", err)
-		os.Exit(-1)
+		helper.Exit("未找到 com.conf com_on:" + err.Error())
 	}
 	controllers := remote_call.RpcControllerNames()
 	for k, v := range openDao {
@@ -171,23 +165,23 @@ func daoOn() {
 			helper.Log().WriteError("dao id 错误:", k, v)
 			continue
 		}
-		var daoName string
+		var comName string
 		for index := 0; index < len(controllers); index++ {
 			if strings.ToLower(controllers[index]) == k {
-				daoName = controllers[index]
+				comName = controllers[index]
 			}
 		}
-		if daoName == "" {
-			helper.Log().WriteError("未找到 dao:", k)
+		if comName == "" {
+			helper.Log().WriteError("未找到 com:", k)
 			continue
 		}
 
 		extra := []interface{}{}
-		extraList := strings.Split(helper.Config().String("dao_extra::"+daoName), ",")
+		extraList := strings.Split(helper.Config().String("com_extra::"+comName), ",")
 		for _, item := range extraList {
 			extra = append(extra, item)
 		}
-		_daoOnList = append(_daoOnList, daoNode{Name: daoName, Id: id, Extra: extra})
+		_daoOnList = append(_daoOnList, comNode{Name: comName, Id: id, Extra: extra})
 	}
 }
 
@@ -207,7 +201,7 @@ func Run(args ...interface{}) {
 	//通知所有model dao关联
 	task := helper.NewGroup()
 	for _, daoItem := range daos() {
-		daonode := daoItem.(daoNode)
+		daonode := daoItem.(comNode)
 		task.Add(func() error {
 			_msl.NotitySubscribe("ModelOn", daonode.Name)
 			_msl.NotitySubscribe("CacheOn", daonode.Name)
@@ -217,8 +211,7 @@ func Run(args ...interface{}) {
 		})
 	}
 	if e := task.Wait(); e != nil {
-		helper.Log().WriteError(e.Error())
-		panic(e.Error())
+		helper.Exit(e.Error())
 	}
 	_esl.NotitySubscribe("startup")
 
@@ -311,13 +304,13 @@ func dbConnectNum() int {
 var ormConnect []string = []string{}
 var ormConMutex sync.Mutex
 
-func connectDao(daoName string) bool {
+func connectDao(comName string) bool {
 	defer ormConMutex.Unlock()
 	ormConMutex.Lock()
-	if helper.InSlice(ormConnect, daoName) {
+	if helper.InSlice(ormConnect, comName) {
 		return false
 	}
-	ormConnect = append(ormConnect, daoName)
+	ormConnect = append(ormConnect, comName)
 	return true
 }
 

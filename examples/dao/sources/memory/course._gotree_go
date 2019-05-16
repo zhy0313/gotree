@@ -6,7 +6,7 @@ import (
 
 // Course
 type Course struct {
-	dao.DaoMemory
+	dao.ComMemory
 }
 
 func init() {
@@ -15,12 +15,12 @@ func init() {
 
 //Gotree
 func (self *Course) Gotree() *Course {
-	self.DaoMemory.Gotree(self)
+	self.ComMemory.Gotree(self)
 	return self
 }
 
-//Dao
-func (self *Course) Dao() string {
+//Com
+func (self *Course) Com() string {
 	return "Feature"
 }
 

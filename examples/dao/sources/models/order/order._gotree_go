@@ -6,7 +6,7 @@ import (
 
 // Product
 type Order struct {
-	dao.DaoModel
+	dao.ComModel
 }
 
 func init() {
@@ -15,12 +15,12 @@ func init() {
 
 // Gotree
 func (self *Order) Gotree() *Order {
-	self.DaoModel.DaoModel(self)
+	self.ComModel.ComModel(self)
 	return self
 }
 
-// Dao
-func (self *Order) Dao() string {
+// Com
+func (self *Order) Com() string {
 	return "Order"
 }
 

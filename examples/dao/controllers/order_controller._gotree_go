@@ -10,17 +10,17 @@ import (
 	"github.com/8treenet/gotree/helper"
 )
 
-type OrderController struct {
-	dao.DaoController
-}
-
 func init() {
 	dao.RegisterController(new(OrderController).Gotree())
 }
 
+type OrderController struct {
+	dao.ComController
+}
+
 // Gotree
 func (self *OrderController) Gotree() *OrderController {
-	self.DaoController.Gotree(self)
+	self.ComController.Gotree(self)
 	return self
 }
 

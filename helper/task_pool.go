@@ -42,7 +42,7 @@ type TaskPool struct {
 	queue     chan *task //队列管道
 	close     bool       //是否关闭
 	length    int        //池大小
-	bseq      string     //bseq
+	gseq      string     //gseq
 	closeLock *sync.RWMutex
 }
 
@@ -82,8 +82,8 @@ func (self *TaskPool) run() {
 			_gGoDict.Remove()
 		}
 	}()
-	if self.bseq != "" {
-		_gGoDict.Set("bseq", self.bseq)
+	if self.gseq != "" {
+		_gGoDict.Set("gseq", self.gseq)
 	}
 	for {
 		self.runTask()
@@ -165,11 +165,11 @@ func (self *TaskGroup) Wait(numGoroutine ...int) error {
 
 	if _gGoDict != nil {
 		//如果有 _taskGoDict 并且有bseq 读取并设置
-		bseq := _gGoDict.Get("bseq")
-		if bseq != nil {
-			str, ok := bseq.(string)
+		gseq := _gGoDict.Get("gseq")
+		if gseq != nil {
+			str, ok := gseq.(string)
 			if ok {
-				self.bseq = str
+				self.gseq = str
 			}
 		}
 	}

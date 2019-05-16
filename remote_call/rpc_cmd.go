@@ -49,7 +49,7 @@ func (self *RpcHeader) Get(src, key string) string {
 
 type RpcCmd struct {
 	lib.Object
-	Bseq          string `opt:"empty"`
+	Gseq          string `opt:"empty"`
 	Head          string `opt:"empty"`
 	cacheIdentity interface{}
 }
@@ -76,20 +76,20 @@ func (self *RpcCmd) SetHttpHeader(head http.Header) {
 	}
 }
 
-type RpcNode interface {
-	RandomRpcAddr() string                    //随机地址
-	BalanceRpcAddr() string                   //负载均衡地址
+type ComNode interface {
+	RandomAddr() string                    //随机地址
+	BalanceAddr() string                   //负载均衡地址
 	HostHashRpcAddr(value interface{}) string //热一致性哈希地址
 	HashRpcAddr(value interface{}) string     //一致性哈希地址
-	SlaveRpcAddr() string                     //返回随机从节点  主节点:节点id=1,当只有主节点返回主节点
-	MasterRpcAddr() string                    //返回主节点
+	SlaveAddr() string                     //返回随机从节点  主节点:节点id=1,当只有主节点返回主节点
+	MasterAddr() string                    //返回主节点
 	AllNode() (list []*NodeInfo)              //获取全部节点,自定义分发
 }
 
 type cmdChild interface {
 	Control() string        //远程服务名称
 	Action() string         //远程服务方法
-	DaoAddr(RpcNode) string //相关服务方法远程地址回调
+	ComAddr(ComNode) string //相关服务方法远程地址回调
 }
 
 type cmdSerChild interface {
@@ -104,13 +104,13 @@ type nodeAddr interface {
 func (self *RpcCmd) Gotree(child interface{}) *RpcCmd {
 	self.Object.Gotree(self)
 	self.AddChild(self, child)
-	bseq := rpc.GoDict().Get("bseq")
-	if bseq == nil {
+	gseq := rpc.GoDict().Get("gseq")
+	if gseq == nil {
 		return self
 	}
-	str, ok := bseq.(string)
+	str, ok := gseq.(string)
 	if ok {
-		self.Bseq = str
+		self.Gseq = str
 	}
 	self.cacheIdentity = nil
 	return self
@@ -118,7 +118,7 @@ func (self *RpcCmd) Gotree(child interface{}) *RpcCmd {
 
 //CacheOn 开启命令缓存 identification标识 通常填写 id
 func (self *RpcCmd) CacheOn(identity interface{}) {
-	if self.Bseq == "" {
+	if self.Gseq == "" {
 		//非请求会话,不可开启缓存
 		return
 	}
@@ -149,7 +149,7 @@ func (self *RpcCmd) RemoteAddr(naddr interface{}) (string, error) {
 	}
 
 	//传入子类该服务远程地址列表,计算要使用的节点
-	return childObj.DaoAddr(nm), nil
+	return childObj.ComAddr(nm), nil
 }
 
 //获取ServiceMethod

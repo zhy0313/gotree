@@ -24,43 +24,42 @@ import (
 	"github.com/8treenet/gotree/lib"
 )
 
-type DaoCache struct {
+type ComCache struct {
 	lib.Object
 	open    bool
-	daoName string
+	comName string
 }
 
-func (self *DaoCache) Gotree(child interface{}) *DaoCache {
+func (self *ComCache) Gotree(child interface{}) *ComCache {
 	self.Object.Gotree(self)
 	self.AddChild(self, child)
 	self.AddSubscribe("DaoTelnet", self.daoTelnet)
 	self.AddSubscribe("CacheOn", self.cacheOn)
-	self.daoName = ""
+	self.comName = ""
 	return self
 }
 
 //TestOn 单元测试 开启
-func (self *DaoCache) TestOn() {
+func (self *ComCache) TestOn() {
 	mode := helper.Config().String("sys::Mode")
 	if mode == "prod" {
-		helper.Log().WriteError("生产环境不可以使用单元测试cache")
-		panic("生产环境不可以使用单元测试cache")
+		helper.Exit("生产环境不可以使用单元测试cache")
 	}
 	self.DaoInit()
-	if helper.Config().DefaultString("dao_on::"+self.daoName, "") == "" {
-		panic("未找到 dao.conf dao_on 域下的组件 " + self.daoName)
+	if helper.Config().DefaultString("com_on::"+self.comName, "") == "" {
+		helper.Exit("未找到 dao.conf com_on 域下的组件 " + self.comName)
 	}
 	self.redisOn()
 }
 
 //daoOn 开启回调
-func (self *DaoCache) daoTelnet(args ...interface{}) {
-	dao := self.TopChild().(daoName)
-	daoName := dao.Dao()
+func (self *ComCache) daoTelnet(args ...interface{}) {
+	dao := self.TopChild().(comName)
+	comName := dao.Com()
 
 	for _, arg := range args {
-		dao := arg.(daoNode)
-		if dao.Name == daoName {
+		dao := arg.(comNode)
+		if dao.Name == comName {
 			self.redisOn()
 			return
 		}
@@ -68,42 +67,42 @@ func (self *DaoCache) daoTelnet(args ...interface{}) {
 }
 
 //cacheOn 开启回调
-func (self *DaoCache) cacheOn(arg ...interface{}) {
-	daoName := arg[0].(string)
-	if daoName == self.daoName {
+func (self *ComCache) cacheOn(arg ...interface{}) {
+	comName := arg[0].(string)
+	if comName == self.comName {
 		self.redisOn()
 	}
 }
 
 //daoOn 开启回调
-func (self *DaoCache) redisOn() {
+func (self *ComCache) redisOn() {
 	self.open = true
-	if !connectDao(self.daoName + "cache") {
+	if !connectDao(self.comName + "cache") {
 		return
 	}
-	redisinfo := helper.Config().String("redis::" + self.daoName)
+	redisinfo := helper.Config().String("redis::" + self.comName)
 	if redisinfo == "" {
-		helper.Log().WriteError("配置文件 dao:" + self.daoName + "redis地址错误或未找到")
+		helper.Log().WriteError("配置文件 dao:" + self.comName + "redis地址错误或未找到")
 	}
 	list := strings.Split(redisinfo, ";")
 	m := map[string]string{}
 	for _, item := range list {
 		kv := strings.Split(item, "=")
 		if len(kv) != 2 {
-			helper.Log().WriteError("配置文件 dao:" + self.daoName + "redis地址错误")
+			helper.Log().WriteError("配置文件 dao:" + self.comName + "redis地址错误")
 			continue
 		}
 		m[kv[0]] = kv[1]
 	}
 
-	client := redis.GetClient(self.daoName)
+	client := redis.GetClient(self.comName)
 	if client != nil {
 		//已注册
 		return
 	}
 
-	maxIdleConns := helper.Config().String("redis::" + self.daoName + "MaxIdleConns")
-	maxOpenConns := helper.Config().String("redis::" + self.daoName + "MaxOpenConns")
+	maxIdleConns := helper.Config().String("redis::" + self.comName + "MaxIdleConns")
+	maxOpenConns := helper.Config().String("redis::" + self.comName + "MaxOpenConns")
 	if maxIdleConns == "" {
 		maxIdleConns = helper.Config().DefaultString("sys::RedisMaxIdleConns", "1")
 	}
@@ -113,40 +112,37 @@ func (self *DaoCache) redisOn() {
 	imaxIdleConns, ei := strconv.Atoi(maxIdleConns)
 	imaxOpenConns, eo := strconv.Atoi(maxOpenConns)
 	if ei != nil || eo != nil || imaxIdleConns == 0 || imaxOpenConns == 0 || imaxIdleConns > imaxOpenConns {
-		helper.Log().WriteError("连接dao redis:"+self.daoName+"失败, 错误原因: MaxIdleConns或MaxOpenConns 参数错误,", imaxIdleConns, imaxOpenConns)
-		panic("严重错误")
+		helper.Exit("连接dao redis:" + self.comName + "失败, 错误原因: MaxIdleConns或MaxOpenConns 参数错误," + fmt.Sprint(imaxIdleConns, imaxOpenConns))
 	}
 
 	db, _ := strconv.Atoi(m["database"])
 	helper.Log().WriteInfo("connect redis: MaxIdleConns:" + maxIdleConns + " MaxOpenConns:" + maxOpenConns + " config:" + fmt.Sprint(m))
 	client, e := redis.NewCache(m["server"], m["password"], db, imaxIdleConns, imaxOpenConns)
 	if e != nil {
-		helper.Log().WriteError(e)
-		panic(e.Error())
+		helper.Exit(e.Error())
 	}
-	redis.AddDatabase(self.daoName, client)
+	redis.AddDatabase(self.comName, client)
 }
 
 //Do
-func (self *DaoCache) Do(cmd string, args ...interface{}) (reply interface{}, e error) {
-	if !self.open || self.daoName == "" {
-		helper.Log().WriteError("cache error: 未开启dao:" + self.daoName)
-		panic("cache error: 未开启dao:" + self.daoName)
+func (self *ComCache) Do(cmd string, args ...interface{}) (reply interface{}, e error) {
+	if !self.open || self.comName == "" {
+		helper.Exit("cache error: 未开启dao:" + self.comName)
 	}
-	reply, e = redis.Do(self.daoName, cmd, args...)
+	reply, e = redis.Do(self.comName, cmd, args...)
 	return
 }
 
-func (self *DaoCache) Connections(m map[string]int) {
+func (self *ComCache) Connections(m map[string]int) {
 	if !self.open {
 		return
 	}
-	n := redis.GetConnects(self.daoName)
-	m[self.daoName] = n
+	n := redis.GetConnects(self.comName)
+	m[self.comName] = n
 }
 
-func (self *DaoCache) DaoInit() {
-	if self.daoName == "" {
-		self.daoName = self.TopChild().(daoName).Dao()
+func (self *ComCache) DaoInit() {
+	if self.comName == "" {
+		self.comName = self.TopChild().(comName).Com()
 	}
 }

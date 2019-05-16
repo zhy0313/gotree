@@ -70,17 +70,17 @@ func viewQps(top int) {
 	}
 	var replys string
 	var restart string
-	client.Call("InnerServer.DaoQps", 100, &replys)
+	client.Call("InnerServer.ComQps", 100, &replys)
 	client.Call("InnerServer.DaoQpsRestartTime", 100, &restart)
 	client.Close()
 	if top == 1 {
-		fmt.Printf("%46s\n", "Dao qps clear: "+restart)
+		fmt.Printf("%46s\n", "Com qps clear: "+restart)
 		for _, str := range strings.Split(replys, "??") {
 			fmt.Println(str)
 		}
 		return
 	}
-	fmt.Printf("%46s\n", "Dao top 30 qps clear: "+restart)
+	fmt.Printf("%46s\n", "Com top 30 qps clear: "+restart)
 	listqps := strings.Split(replys, "??")
 	if len(listqps) > 30 {
 		listqps = listqps[0:30]

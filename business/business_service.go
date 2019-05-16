@@ -14,6 +14,7 @@
 package business
 
 import (
+	"os"
 	"strconv"
 	"strings"
 
@@ -38,8 +39,7 @@ func (self *BusinessService) Gotree(child interface{}) *BusinessService {
 
 func (self *BusinessService) CallDao(obj interface{}, reply interface{}) error {
 	if !self._openService {
-		helper.Log().WriteError("禁止重复实例化后调用")
-		panic("禁止重复实例化后调用")
+		helper.Exit("禁止重复实例化后调用")
 	}
 	var client *remote_call.RpcClient
 	if e := _ssl.GetComponent(&client); e != nil {
@@ -65,9 +65,9 @@ func (self *BusinessService) TestOn(testDaos ...string) {
 	mode := helper.Config().String("sys::Mode")
 	if mode == "prod" {
 		helper.Log().WriteError("生产环境不可以使用单元测试service")
-		panic("生产环境不可以使用单元测试service")
+		os.Exit(-1)
 	}
-	rpc.GoDict().Set("bseq", "ServiceUnit")
+	rpc.GoDict().Set("gseq", "ServiceUnit")
 	self._openService = true
 
 	var im *remote_call.InnerMaster
@@ -84,8 +84,7 @@ func (self *BusinessService) TestOn(testDaos ...string) {
 func (self *BusinessService) OpenService() {
 	exist := _scl.CheckService(self.TopChild())
 	if exist {
-		helper.Log().WriteError("禁止重复实例化")
-		panic("禁止重复实例化")
+		helper.Exit("禁止重复实例化后调用")
 	}
 	self._openService = true
 	return

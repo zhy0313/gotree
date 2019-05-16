@@ -145,7 +145,7 @@ func (self *InnerMaster) removeAddr(addr string) {
 	delete(self.addrMap, addr)
 }
 
-//RandomRpcAddr 随机节点地址 ping模式
+//RandomAddr 随机节点地址 ping模式
 func (self *InnerMaster) randomRpcAddr() string {
 	defer self.mutex.Unlock()
 	self.mutex.Lock()

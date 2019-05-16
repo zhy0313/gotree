@@ -136,7 +136,7 @@ func (self *timer) triggerLoop(name string) {
 		}
 
 		if deltaTime >= self.n {
-			_gGoDict.Set("bseq", "t-"+getTseq())
+			_gGoDict.Set("gseq", "t-"+getTseq())
 			self.tickfunc()
 			deltaTime = 0
 		}
@@ -202,7 +202,7 @@ func (self *timer) dayLoop(hour, minute int, name string) {
 		diff := n - unix
 		diffTick := int(float32(diff) * float32(0.01))
 		if unix > n {
-			_gGoDict.Set("bseq", "t-"+getTseq())
+			_gGoDict.Set("gseq", "t-"+getTseq())
 			self.timeDay()
 			break
 		}

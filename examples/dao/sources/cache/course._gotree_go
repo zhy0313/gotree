@@ -14,11 +14,11 @@ import (
 	redis通信调用已包含在DaoCache.Do里。
 	裸用redis难以维护，推荐再次封装。 如处理json、key、公司内部规范读写、等。 按gotree继承结构，在cache目录下建立cache_base.go
 	type CacheBase struct {
-		dao.DaoCache //CacheBase
+		dao.ComCache //CacheBase
 	}
 
 	func (self *CacheBase) Gotree(child ...interface{}) *CacheBase {
-		self.DaoCache.Gotree(self)
+		self.ComCache.Gotree(self)
 		self.AddChild(self, child...)
 		return self
 	}
@@ -31,7 +31,7 @@ import (
 
 //TestCache
 type Course struct {
-	dao.DaoCache //或继承再次封装的CacheBase
+	dao.ComCache //或继承再次封装的CacheBase
 	Id           string
 	Exp          int64
 }
@@ -42,12 +42,12 @@ func init() {
 
 //Course
 func (self *Course) Gotree() *Course {
-	self.DaoCache.Gotree(self)
+	self.ComCache.Gotree(self)
 	return self
 }
 
-//Dao
-func (self *Course) Dao() string {
+//Com
+func (self *Course) Com() string {
 	return "Feature"
 }
 

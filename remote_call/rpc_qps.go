@@ -46,8 +46,8 @@ func (self *RpcQps) Gotree() *RpcQps {
 	self.dict = make(map[string]*qps)
 	self.beginTime = time.Now().Unix()
 	lib.RunTickStopTimer(_CHECK_QPS_RESET, self.tick) //定时器检测超时节点
-	self.AddSubscribe("DaoQps", self.list)
-	self.AddSubscribe("DaoQpsBeginTime", self.DaoQpsBeginTime)
+	self.AddSubscribe("ComQps", self.list)
+	self.AddSubscribe("ComQpsBeginTime", self.ComQpsBeginTime)
 	return self
 }
 
@@ -152,7 +152,7 @@ func (self *RpcQps) list(args ...interface{}) {
 	return
 }
 
-func (self *RpcQps) DaoQpsBeginTime(args ...interface{}) {
+func (self *RpcQps) ComQpsBeginTime(args ...interface{}) {
 	ret := args[0].(*int64)
 	*ret = self.beginTime
 }

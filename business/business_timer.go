@@ -73,8 +73,7 @@ func (self *BusinessTimer) stopTick(args ...interface{}) {
 func (self *BusinessTimer) Service(child interface{}) {
 	err := _scl.Service(child)
 	if err != nil {
-		helper.Log().WriteError("飞哥:不要乱调用:" + err.Error())
-		panic("飞哥:不要乱调用:" + err.Error())
+		helper.Exit("飞哥:不要乱调用:" + err.Error())
 	}
 	return
 }
@@ -128,8 +127,7 @@ func (self *BusinessTimer) timer(args ...interface{}) {
 func (self *BusinessTimer) OpenTimer() {
 	exist := _tsl.CheckService(self.TopChild())
 	if exist {
-		helper.Log().WriteError("禁止重复实例化")
-		panic("禁止重复实例化")
+		helper.Exit("禁止重复实例化")
 	}
 	self._openService = true
 	return

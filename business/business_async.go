@@ -34,7 +34,7 @@ type async struct {
 	run       func(ac AsyncController)
 	completef func()
 	mutex     sync.Mutex
-	bseq      string
+	gseq      string
 	exit      chan bool
 }
 
@@ -44,11 +44,11 @@ func (self *async) Gotree(run func(ac AsyncController), completef func()) *async
 	self.run = run
 	self.completef = completef
 	self.AddSubscribe("shutdown", self.shutdown)
-	bseqi := rpc.GoDict().Get("bseq")
+	bseqi := rpc.GoDict().Get("gseq")
 	if bseqi != nil {
 		str, ok := bseqi.(string)
 		if ok {
-			self.bseq = str
+			self.gseq = str
 		}
 	}
 	self.exit = make(chan bool, 1)
@@ -105,14 +105,14 @@ func (self *async) execute() {
 			helper.Log().WriteError(perr)
 		}
 		atomic.AddInt32(&asyncNum, -1)
-		if self.bseq != "" {
+		if self.gseq != "" {
 			rpc.GoDict().Remove()
 		}
 		self.DelSubscribe("shutdown")
 	}()
 
-	if self.bseq != "" {
-		rpc.GoDict().Set("bseq", self.bseq)
+	if self.gseq != "" {
+		rpc.GoDict().Set("gseq", self.gseq)
 	}
 
 	self.run(self)

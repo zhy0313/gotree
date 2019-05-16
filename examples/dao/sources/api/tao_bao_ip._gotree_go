@@ -8,7 +8,7 @@ import (
 
 // TaoBaoIp
 type TaoBaoIp struct {
-	dao.DaoApi
+	dao.ComApi
 }
 
 func init() {
@@ -17,7 +17,7 @@ func init() {
 
 //Gotree
 func (self *TaoBaoIp) Gotree() *TaoBaoIp {
-	self.DaoApi.Gotree(self)
+	self.ComApi.Gotree(self)
 	return self
 }
 

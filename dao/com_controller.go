@@ -17,18 +17,20 @@ package dao
 import (
 	"reflect"
 
+	"github.com/8treenet/gotree/helper"
+
 	"github.com/8treenet/gotree/dao/orm"
 	"github.com/8treenet/gotree/remote_call"
 )
 
-//DaoController
-type DaoController struct {
+//ComController
+type ComController struct {
 	remote_call.RpcController
 	selfName string
 }
 
 //Gotree
-func (self *DaoController) Gotree(child interface{}) *DaoController {
+func (self *ComController) Gotree(child interface{}) *ComController {
 	self.RpcController.Gotree(self)
 	self.AddChild(self, child)
 
@@ -40,72 +42,72 @@ func (self *DaoController) Gotree(child interface{}) *DaoController {
 }
 
 //Model 服务定位器获取model
-func (self *DaoController) Model(child interface{}) {
-	modelDao := reflect.ValueOf(child).Elem().Interface().(daoName).Dao()
+func (self *ComController) Model(child interface{}) {
+	modelDao := reflect.ValueOf(child).Elem().Interface().(comName).Com()
 	if self.selfName != modelDao {
-		panic("model 不在一个dao下,不要乱调用")
+		helper.Exit("model 不在一个 com 下,不要乱调用")
 	}
 
 	err := _msl.Service(child)
 	if err != nil {
-		panic("禁止调用:" + err.Error())
+		helper.Exit("禁止调用 " + err.Error())
 	}
 	return
 }
 
 //Cache 服务定位器获取Cache
-func (self *DaoController) Cache(child interface{}) {
-	cacheDao := reflect.ValueOf(child).Elem().Interface().(daoName).Dao()
+func (self *ComController) Cache(child interface{}) {
+	cacheDao := reflect.ValueOf(child).Elem().Interface().(comName).Com()
 	if self.selfName != cacheDao {
-		panic("cache不在一个dao下,不要乱调用")
+		helper.Exit("cachae 不在一个 com 下,不要乱调用")
 	}
 
 	err := _csl.Service(child)
 	if err != nil {
-		panic("禁止调用:" + err.Error())
+		helper.Exit("禁止调用 " + err.Error())
 	}
 	return
 }
 
 //Api 服务定位器获取Api
-func (self *DaoController) Api(child interface{}) {
+func (self *ComController) Api(child interface{}) {
 	err := _api.Service(child)
 	if err != nil {
-		panic("禁止调用:" + err.Error())
+		helper.Exit("禁止调用 " + err.Error())
 	}
 	return
 }
 
 //Memory 服务定位器获取Memory
-func (self *DaoController) Memory(child interface{}) {
-	apiDao := reflect.ValueOf(child).Elem().Interface().(daoName).Dao()
+func (self *ComController) Memory(child interface{}) {
+	apiDao := reflect.ValueOf(child).Elem().Interface().(comName).Com()
 	if self.selfName != apiDao {
-		panic("Memory不在一个dao下,不要乱调用")
+		helper.Exit("memory 不在一个 com 下,不要乱调用")
 	}
 
 	err := _esl.Service(child)
 	if err != nil {
-		panic("禁止调用:" + err.Error())
+		helper.Exit("禁止调用 " + err.Error())
 	}
 	return
 }
 
 //Transaction 事务
-func (self *DaoController) Transaction(fun func() error) error {
+func (self *ComController) Transaction(fun func() error) error {
 	return orm.Transaction(self.selfName, fun)
 }
 
 //Queue 队列处理
-func (self *DaoController) Queue(name string, fun func() error) {
+func (self *ComController) Queue(name string, fun func() error) {
 	q, ok := queueMap[self.selfName+"_"+name]
 	if !ok {
-		panic("未注册队列:" + self.selfName + "." + name)
+		helper.Exit("未注册队列:" + self.selfName + "." + name)
 	}
 	q.cast(fun)
 }
 
 //TotalPage 总页数
-func (self *DaoController) TotalPage(size, pageSize int) int {
+func (self *ComController) TotalPage(size, pageSize int) int {
 	if size%pageSize == 0 {
 		return size / pageSize
 	}

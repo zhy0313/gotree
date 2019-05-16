@@ -85,7 +85,7 @@ func (self *InnerServerController) DaoStatus(arg interface{}, ret *string) error
 		if *ret != "" {
 			*ret += ";"
 		}
-		*ret += "dao:" + item.name + " id:" + fmt.Sprint(item.id) + " ip:" + item.ip + " port:" + item.port + " extra:" + fmt.Sprint(item.Extra)
+		*ret += "com:" + item.name + " id:" + fmt.Sprint(item.id) + " ip:" + item.ip + " port:" + item.port + " extra:" + fmt.Sprint(item.Extra)
 	}
 	return nil
 }
@@ -146,7 +146,7 @@ func (self *InnerServerController) BusinessInfo(arg interface{}, ret *string) er
 }
 
 //BusinessInfo Business服务信息
-func (self *InnerServerController) DaoQps(arg interface{}, ret *string) error {
+func (self *InnerServerController) ComQps(arg interface{}, ret *string) error {
 	var list []struct {
 		ServiceMethod string
 		Count         int64 //调用次数
@@ -154,7 +154,7 @@ func (self *InnerServerController) DaoQps(arg interface{}, ret *string) error {
 		MaxMs         int64 //最高用时
 		MinMs         int64 //最低用时
 	}
-	self.NotitySubscribe("DaoQps", &list)
+	self.NotitySubscribe("ComQps", &list)
 	helper.SliceSort(&list, "AvgMs")
 	*ret += fmt.Sprintf("%46s %12s %10s %10s %10s", "Call", "Count", "MaxMs", "MinMs", "AvgMs")
 	for _, item := range list {

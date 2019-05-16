@@ -134,7 +134,7 @@ func (self *log) WriteError(str ...interface{}) {
 	str = append(str, "stack:"+stack)
 	text := []interface{}{}
 	if no := self.BseqNo(); no != "" {
-		text = append(text, "bseq:"+no)
+		text = append(text, "gseq:"+no)
 	}
 	text = append(text, str...)
 	datetime := self.nowDateTime()
@@ -161,7 +161,7 @@ func (self *log) WriteDaemonError(str ...interface{}) {
 func (self *log) WriteWarn(str ...interface{}) {
 	text := []interface{}{}
 	if no := self.BseqNo(); no != "" {
-		text = append(text, "bseq:"+no)
+		text = append(text, "gseq:"+no)
 	}
 	datetime := self.nowDateTime()
 	text = append(text, str...)
@@ -180,7 +180,7 @@ func (self *log) WriteWarn(str ...interface{}) {
 func (self *log) WriteInfo(str ...interface{}) {
 	text := []interface{}{}
 	if no := self.BseqNo(); no != "" {
-		text = append(text, "bseq:"+no)
+		text = append(text, "gseq:"+no)
 	}
 	datetime := self.nowDateTime()
 	text = append(text, str...)
@@ -333,12 +333,12 @@ func (self *log) BseqNo() string {
 		return ""
 	}
 
-	bseq := self.bseqMap.Get("bseq")
-	if bseq == nil {
+	gseq := self.bseqMap.Get("gseq")
+	if gseq == nil {
 		return ""
 	}
 
-	str, ok := bseq.(string)
+	str, ok := gseq.(string)
 	if !ok {
 		return ""
 	}

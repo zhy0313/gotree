@@ -435,17 +435,17 @@ func (s *service) call(server *Server, sending *sync.Mutex, mtype *methodType, r
 	}
 	ci, ok := values[0].Interface().(callip)
 	var errInter interface{}
-	bseq := ""
+	gseq := ""
 	for {
 		if err := FieldEmpty(argv); err != nil {
 			errInter = err
 			break
 		}
-		if argv.Kind() == reflect.Struct && argv.FieldByName("Bseq").IsValid() {
-			bseq = argv.FieldByName("Bseq").String()
+		if argv.Kind() == reflect.Struct && argv.FieldByName("Gseq").IsValid() {
+			gseq = argv.FieldByName("Gseq").String()
 		}
-		if bseq != "" {
-			goDict.Set("bseq", bseq)
+		if gseq != "" {
+			goDict.Set("gseq", gseq)
 		}
 
 		if ok {
@@ -473,7 +473,7 @@ func (s *service) call(server *Server, sending *sync.Mutex, mtype *methodType, r
 	errmsg := ""
 	if errInter != nil {
 		errmsg = errInter.(error).Error()
-		if bseq == "" && errmsg != "ServerShutDown" {
+		if gseq == "" && errmsg != "ServerShutDown" {
 			helper.Log().WriteWarn("控制器:"+newtype.Name(), "方法:"+mtype.method.Name, "错误:"+errmsg)
 		}
 	}

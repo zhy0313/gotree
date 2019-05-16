@@ -28,16 +28,16 @@ type daoQueue struct {
 	maxGo     int32          //最大go程
 	queue     chan queueCast //队列管道
 	currentGo int32          //当前执行go程
-	dao       string
+	com       string
 	name      string
 }
 
-func (self *daoQueue) Gotree(queueLen, max int, dao, name string) *daoQueue {
+func (self *daoQueue) Gotree(queueLen, max int, com, name string) *daoQueue {
 	self.Object.Gotree(self)
 	self.queue = make(chan queueCast, queueLen)
 	self.maxGo = int32(max)
 	self.currentGo = 0
-	self.dao = dao
+	self.com = com
 	self.name = name
 	return self
 }
@@ -48,12 +48,12 @@ func (self *daoQueue) cast(fun func() error) {
 	gdict := rpc.GoDict()
 	var bseqstr string
 	if gdict != nil {
-		seq := gdict.Get("bseq")
+		seq := gdict.Get("gseq")
 		if seq != nil {
 			bseqstr = seq.(string)
 		}
 	}
-	q := queueCast{f: fun, bseq: bseqstr}
+	q := queueCast{f: fun, gseq: bseqstr}
 	self.queue <- q
 	return
 }
@@ -107,18 +107,18 @@ func (self *daoQueue) assistRun() {
 func (self *daoQueue) execute(f queueCast) {
 	defer func() {
 		if perr := recover(); perr != nil {
-			helper.Log().WriteWarn(self.dao+"."+self.name+" queue: ", fmt.Sprint(perr))
+			helper.Log().WriteWarn(self.com+"."+self.name+" queue: ", fmt.Sprint(perr))
 		}
 	}()
 
-	rpc.GoDict().Set("bseq", f.bseq)
+	rpc.GoDict().Set("gseq", f.gseq)
 	err := f.f()
 	if err != nil {
-		helper.Log().WriteWarn(self.dao+"."+self.name+" queue: ", err)
+		helper.Log().WriteWarn(self.com+"."+self.name+" queue: ", err)
 	}
 }
 
 type queueCast struct {
 	f    func() error
-	bseq string
+	gseq string
 }

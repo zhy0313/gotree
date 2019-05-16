@@ -11,17 +11,17 @@ import (
 	"github.com/8treenet/gotree/helper"
 )
 
-type ProductController struct {
-	dao.DaoController
-}
-
 func init() {
 	dao.RegisterController(new(ProductController).Gotree())
 }
 
+type ProductController struct {
+	dao.ComController
+}
+
 //Gotree
 func (self *ProductController) Gotree() *ProductController {
-	self.DaoController.Gotree(self)
+	self.ComController.Gotree(self)
 	return self
 }
 
@@ -46,7 +46,7 @@ func (self *ProductController) Add(cmd dao_cmd.ProductAdd, result *helper.VoidVa
 	return
 }
 
-// Add 添加商品
+// Get 获取商品
 func (self *ProductController) Get(cmd dao_cmd.ProductGet, result *dao_value.ProductGet) (e error) {
 	var (
 		mProduct *product.Product
@@ -64,7 +64,7 @@ func (self *ProductController) Get(cmd dao_cmd.ProductGet, result *dao_value.Pro
 	return
 }
 
-// Add 添加商品
+// GetList 获取商品列表
 func (self *ProductController) GetList(cmd dao_cmd.ProductGetList, result *dao_value.ProductGetList) (e error) {
 	var (
 		mProduct *product.Product

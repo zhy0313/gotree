@@ -15,7 +15,6 @@
 package dao
 
 import (
-	"os"
 	"sync"
 	"time"
 
@@ -23,20 +22,20 @@ import (
 	"github.com/8treenet/gotree/lib"
 )
 
-//DaoMemory 内存数据源
-type DaoMemory struct {
+//ComMemory 内存数据源
+type ComMemory struct {
 	lib.Object
-	daoName   string
+	comName   string
 	open      bool
 	dict      *lib.Dict
 	dictMutex sync.Mutex
 	dictEep   map[interface{}]int64
 }
 
-func (self *DaoMemory) Gotree(child interface{}) *DaoMemory {
+func (self *ComMemory) Gotree(child interface{}) *ComMemory {
 	self.Object.Gotree(self)
 	self.AddChild(self, child)
-	self.daoName = ""
+	self.comName = ""
 	self.AddSubscribe("MemoryOn", self.memoryOn)
 
 	self.dict = new(lib.Dict).Gotree()
@@ -45,29 +44,28 @@ func (self *DaoMemory) Gotree(child interface{}) *DaoMemory {
 }
 
 //TestOn 单元测试 开启
-func (self *DaoMemory) TestOn() {
+func (self *ComMemory) TestOn() {
 	mode := helper.Config().String("sys::Mode")
 	if mode == "prod" {
-		helper.Log().WriteError("生产环境不可以使用单元测试model")
-		os.Exit(1)
+		helper.Exit("生产环境不可以使用单元测试model")
 	}
 	self.DaoInit()
-	if helper.Config().DefaultString("dao_on::"+self.daoName, "") == "" {
-		panic("未找到 dao.conf dao_on 域下的组件 " + self.daoName)
+	if helper.Config().DefaultString("com_on::"+self.comName, "") == "" {
+		helper.Exit("未找到 com.conf com_on 域下的组件 " + self.comName)
 	}
 	self.open = true
 }
 
 //daoOn 开启回调
-func (self *DaoMemory) memoryOn(arg ...interface{}) {
-	daoName := arg[0].(string)
-	if daoName == self.daoName {
+func (self *ComMemory) memoryOn(arg ...interface{}) {
+	comName := arg[0].(string)
+	if comName == self.comName {
 		self.open = true
 	}
 }
 
 // Set
-func (self *DaoMemory) Set(key, value interface{}) {
+func (self *ComMemory) Set(key, value interface{}) {
 	defer self.dictMutex.Unlock()
 	self.dictMutex.Lock()
 	self.dict.Set(key, value)
@@ -75,7 +73,7 @@ func (self *DaoMemory) Set(key, value interface{}) {
 }
 
 // Get 不存在 返回false
-func (self *DaoMemory) Get(key, value interface{}) bool {
+func (self *ComMemory) Get(key, value interface{}) bool {
 	defer self.dictMutex.Unlock()
 	self.dictMutex.Lock()
 	e := self.dict.Get(key, value)
@@ -86,7 +84,7 @@ func (self *DaoMemory) Get(key, value interface{}) bool {
 }
 
 // SetTnx 当key不存在设置成功返回true 否则返回false
-func (self *DaoMemory) Setnx(key, value interface{}) bool {
+func (self *ComMemory) Setnx(key, value interface{}) bool {
 	defer self.dictMutex.Unlock()
 	self.dictMutex.Lock()
 	if self.dict.Check(key) {
@@ -97,15 +95,15 @@ func (self *DaoMemory) Setnx(key, value interface{}) bool {
 }
 
 // MultiSet 多条
-func (self *DaoMemory) MultiSet(args ...interface{}) {
+func (self *ComMemory) MultiSet(args ...interface{}) {
 	defer self.dictMutex.Unlock()
 	self.dictMutex.Lock()
 	if len(args) <= 0 {
-		panic("MultiSet len(args) <= 0")
+		helper.Exit("MultiSet len(args) <= 0")
 	}
 	//多参必须是偶数
 	if (len(args) & 1) == 1 {
-		panic("MultiSet len(args)&1 == 1")
+		helper.Exit("MultiSet len(args)&1 == 1")
 	}
 
 	for index := 0; index < len(args); index += 2 {
@@ -115,15 +113,15 @@ func (self *DaoMemory) MultiSet(args ...interface{}) {
 }
 
 // MultiSet 多条
-func (self *DaoMemory) MultiSetnx(args ...interface{}) bool {
+func (self *ComMemory) MultiSetnx(args ...interface{}) bool {
 	defer self.dictMutex.Unlock()
 	self.dictMutex.Lock()
 	if len(args) <= 0 {
-		panic("MultiSet len(args) <= 0")
+		helper.Exit("MultiSet len(args) <= 0")
 	}
 	//多参必须是偶数
 	if (len(args) & 1) == 1 {
-		panic("MultiSet len(args)&1 == 1")
+		helper.Exit("MultiSet len(args)&1 == 1")
 	}
 
 	for index := 0; index < len(args); index += 2 {
@@ -138,7 +136,7 @@ func (self *DaoMemory) MultiSetnx(args ...interface{}) bool {
 }
 
 // Eexpire 设置 key 的生命周期, sec:秒
-func (self *DaoMemory) Expire(key interface{}, sec int) {
+func (self *ComMemory) Expire(key interface{}, sec int) {
 	defer self.dictMutex.Unlock()
 	self.dictMutex.Lock()
 	if !self.dict.Check(key) {
@@ -150,7 +148,7 @@ func (self *DaoMemory) Expire(key interface{}, sec int) {
 }
 
 // Delete 删除 key
-func (self *DaoMemory) Delete(keys ...interface{}) {
+func (self *ComMemory) Delete(keys ...interface{}) {
 	defer self.dictMutex.Unlock()
 	self.dictMutex.Lock()
 	for _, key := range keys {
@@ -160,7 +158,7 @@ func (self *DaoMemory) Delete(keys ...interface{}) {
 }
 
 // DeleteAll 删除全部数据
-func (self *DaoMemory) DeleteAll(key interface{}) {
+func (self *ComMemory) DeleteAll(key interface{}) {
 	defer self.dictMutex.Unlock()
 	self.dictMutex.Lock()
 	self.dict.DelAll()
@@ -168,7 +166,7 @@ func (self *DaoMemory) DeleteAll(key interface{}) {
 }
 
 // Incr add 加数据, key必须存在否则errror
-func (self *DaoMemory) Incr(key interface{}, addValue int64) (result int64, e error) {
+func (self *ComMemory) Incr(key interface{}, addValue int64) (result int64, e error) {
 	defer self.dictMutex.Unlock()
 	self.dictMutex.Lock()
 	e = self.dict.Get(key, &result)
@@ -181,7 +179,7 @@ func (self *DaoMemory) Incr(key interface{}, addValue int64) (result int64, e er
 }
 
 // AllKey 获取全部key
-func (self *DaoMemory) AllKey() (result []interface{}) {
+func (self *ComMemory) AllKey() (result []interface{}) {
 	defer self.dictMutex.Unlock()
 	self.dictMutex.Lock()
 	result = self.dict.Keys()
@@ -189,7 +187,7 @@ func (self *DaoMemory) AllKey() (result []interface{}) {
 }
 
 // MemoryTimeout 超时处理
-func (self *DaoMemory) MemoryTimeout(now int64) {
+func (self *ComMemory) MemoryTimeout(now int64) {
 	keys := []interface{}{}
 	self.dictMutex.Lock()
 	for k, v := range self.dictEep {
@@ -206,8 +204,8 @@ func (self *DaoMemory) MemoryTimeout(now int64) {
 	return
 }
 
-func (self *DaoMemory) DaoInit() {
-	if self.daoName == "" {
-		self.daoName = self.TopChild().(daoName).Dao()
+func (self *ComMemory) DaoInit() {
+	if self.comName == "" {
+		self.comName = self.TopChild().(comName).Com()
 	}
 }

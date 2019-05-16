@@ -4,23 +4,23 @@ import (
 	"github.com/8treenet/gotree/dao"
 )
 
-// OrderLog
-type OrderLog struct {
-	dao.DaoModel
-}
-
 func init() {
 	dao.RegisterModel(new(OrderLog).Gotree())
 }
 
+// OrderLog
+type OrderLog struct {
+	dao.ComModel
+}
+
 // Gotree
 func (self *OrderLog) Gotree() *OrderLog {
-	self.DaoModel.DaoModel(self)
+	self.ComModel.ComModel(self)
 	return self
 }
 
-// Dao
-func (self *OrderLog) Dao() string {
+// Com
+func (self *OrderLog) Com() string {
 	return "Order"
 }
 

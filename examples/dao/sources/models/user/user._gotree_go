@@ -10,7 +10,7 @@ import (
 
 // User
 type User struct {
-	dao.DaoModel
+	dao.ComModel
 }
 
 func init() {
@@ -19,12 +19,12 @@ func init() {
 
 // Gotree
 func (self *User) Gotree() *User {
-	self.DaoModel.DaoModel(self)
+	self.ComModel.ComModel(self)
 	return self
 }
 
-// Dao
-func (self *User) Dao() string {
+// Com
+func (self *User) Com() string {
 	return "User"
 }
 

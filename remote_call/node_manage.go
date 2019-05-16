@@ -44,8 +44,8 @@ func (self *nodeManage) nodeManage() *nodeManage {
 	return self
 }
 
-//RandomRpcAddr 随机节点地址
-func (self *nodeManage) RandomRpcAddr() string {
+//RandomAddr 随机节点地址
+func (self *nodeManage) RandomAddr() string {
 	defer self.mutex.Unlock()
 	self.mutex.Lock()
 
@@ -58,8 +58,8 @@ func (self *nodeManage) RandomRpcAddr() string {
 	return list[index].RpcAddr()
 }
 
-//BalanceRpcAddr 均衡节点地址
-func (self *nodeManage) BalanceRpcAddr() string {
+//BalanceAddr 均衡节点地址
+func (self *nodeManage) BalanceAddr() string {
 	defer self.mutex.Unlock()
 	self.mutex.Lock()
 
@@ -141,8 +141,8 @@ func (self *nodeManage) HashRpcId(value interface{}) int {
 	return nodeid
 }
 
-//SlaveRpcAddr 从节点地址
-func (self *nodeManage) SlaveRpcAddr() string {
+//SlaveAddr 从节点地址
+func (self *nodeManage) SlaveAddr() string {
 	defer self.mutex.Unlock()
 	self.mutex.Lock()
 
@@ -167,8 +167,8 @@ func (self *nodeManage) SlaveRpcAddr() string {
 	return slvae[index].RpcAddr()
 }
 
-//MasterRpcAddr 返回主节点
-func (self *nodeManage) MasterRpcAddr() string {
+//MasterAddr 返回主节点
+func (self *nodeManage) MasterAddr() string {
 	defer self.mutex.Unlock()
 	self.mutex.Lock()
 

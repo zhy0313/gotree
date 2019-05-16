@@ -25,11 +25,11 @@ import (
 	"github.com/8treenet/gotree/remote_call"
 )
 
-var bseq int64
+var gseq int64
 var identification string
 
 func init() {
-	bseq = 1
+	gseq = 1
 	rand.Seed(time.Now().Unix())
 	x := int64(rand.Intn(10000))
 	identification = strconv.FormatInt(x, 36)
@@ -44,7 +44,7 @@ type BusinessController struct {
 func (self *BusinessController) Gotree(child interface{}) *BusinessController {
 	self.RpcController.Gotree(self)
 	self.AddChild(self, child)
-	rpc.GoDict().Set("bseq", getBseq())
+	rpc.GoDict().Set("gseq", getBseq())
 	return self
 }
 
@@ -52,8 +52,7 @@ func (self *BusinessController) Gotree(child interface{}) *BusinessController {
 func (self *BusinessController) Service(child interface{}) {
 	err := _scl.Service(child)
 	if err != nil {
-		helper.Log().WriteError("飞哥:不要乱调用:" + err.Error())
-		panic("飞哥:不要乱调用:" + err.Error())
+		helper.Exit("飞哥:不要乱调用:" + err.Error())
 	}
 	return
 }
@@ -81,11 +80,11 @@ func getBseq() (result string) {
 	defer bseqMutex.Unlock()
 	bseqMutex.Lock()
 	result = identification
-	result += strconv.FormatInt(bseq, 36)
-	if bseq == math.MaxInt64 {
-		bseq = 1
+	result += strconv.FormatInt(gseq, 36)
+	if gseq == math.MaxInt64 {
+		gseq = 1
 		return
 	}
-	bseq += 1
+	gseq += 1
 	return
 }

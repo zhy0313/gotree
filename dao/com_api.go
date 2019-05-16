@@ -31,7 +31,7 @@ var tp *lib.LimiteGo
 
 type Request func(request *helper.HTTPRequest)
 
-type DaoApi struct {
+type ComApi struct {
 	lib.Object
 	open    bool
 	apiName string
@@ -46,7 +46,7 @@ type DaoApi struct {
 	countMutex sync.Mutex
 }
 
-func (self *DaoApi) Gotree(child interface{}) *DaoApi {
+func (self *ComApi) Gotree(child interface{}) *ComApi {
 	self.Object.Gotree(self)
 	self.AddChild(self, child)
 	self.apiName = ""
@@ -62,11 +62,10 @@ func (self *DaoApi) Gotree(child interface{}) *DaoApi {
 }
 
 //TestOn 单元测试 开启
-func (self *DaoApi) TestOn() {
+func (self *ComApi) TestOn() {
 	mode := helper.Config().String("sys::Mode")
 	if mode == "prod" {
-		helper.Log().WriteError("生产环境不可以使用单元测试api")
-		panic("生产环境不可以使用单元测试api")
+		helper.Exit("生产环境不可以使用单元测试api")
 	}
 	self.apiOn()
 }
@@ -76,14 +75,14 @@ type apiName interface {
 }
 
 //apiOn
-func (self *DaoApi) apiOn() {
+func (self *ComApi) apiOn() {
 	self.open = true
 	self.apiName = self.TopChild().(apiName).Api()
 	self.host = helper.Config().String("api::" + self.apiName)
 }
 
 //HttpGet
-func (self *DaoApi) HttpGet(apiAddr string, args map[string]interface{}, callback ...Request) (result []byte, e error) {
+func (self *ComApi) HttpGet(apiAddr string, args map[string]interface{}, callback ...Request) (result []byte, e error) {
 	req := helper.HttpGet(self.host + apiAddr + "?" + httpBuildQuery(args))
 	req = req.SetTimeout(3*time.Second, 10*time.Second)
 	fun := func() error {
@@ -120,7 +119,7 @@ func (self *DaoApi) HttpGet(apiAddr string, args map[string]interface{}, callbac
 }
 
 //HttpPost
-func (self *DaoApi) HttpPost(apiAddr string, args map[string]interface{}, callback ...Request) (result []byte, e error) {
+func (self *ComApi) HttpPost(apiAddr string, args map[string]interface{}, callback ...Request) (result []byte, e error) {
 	req := helper.HttpPost(self.host + apiAddr)
 	req = req.SetTimeout(3*time.Second, 10*time.Second)
 	for k, v := range args {
@@ -162,7 +161,7 @@ func (self *DaoApi) HttpPost(apiAddr string, args map[string]interface{}, callba
 }
 
 //HttpPostJson
-func (self *DaoApi) HttpPostJson(apiAddr string, raw interface{}, callback ...Request) (result []byte, e error) {
+func (self *ComApi) HttpPostJson(apiAddr string, raw interface{}, callback ...Request) (result []byte, e error) {
 	req := helper.HttpPost(self.host + apiAddr)
 	req = req.SetTimeout(3*time.Second, 10*time.Second)
 	req.JSONBody(raw)
@@ -202,12 +201,12 @@ func (self *DaoApi) HttpPostJson(apiAddr string, raw interface{}, callback ...Re
 }
 
 //HostAddr 获取本api dao的host地址
-func (self *DaoApi) HostAddr() string {
+func (self *ComApi) HostAddr() string {
 	return self.host
 }
 
 //limited api限制
-func (self *DaoApi) count() error {
+func (self *ComApi) count() error {
 	defer self.countMutex.Unlock()
 	self.countMutex.Lock()
 	if self.minMax > 0 && self.minCount >= self.minMax {
@@ -233,7 +232,7 @@ func (self *DaoApi) count() error {
 }
 
 //limited api限制是否开启
-func (self *DaoApi) limited() bool {
+func (self *ComApi) limited() bool {
 	if self.dayMax > 0 || self.minMax > 0 || self.hourMax > 0 {
 		return true
 	}
@@ -241,7 +240,7 @@ func (self *DaoApi) limited() bool {
 }
 
 //DayCountLimit 每日限制
-func (self *DaoApi) DayCountLimit(count int) {
+func (self *ComApi) DayCountLimit(count int) {
 	if self.dayMax > 0 {
 		return
 	}
@@ -254,7 +253,7 @@ func (self *DaoApi) DayCountLimit(count int) {
 }
 
 //HourCountLimit 每小时限制
-func (self *DaoApi) HourCountLimit(count int) {
+func (self *ComApi) HourCountLimit(count int) {
 	if self.hourMax > 0 {
 		return
 	}
@@ -267,7 +266,7 @@ func (self *DaoApi) HourCountLimit(count int) {
 }
 
 //MinCountLimit 每分钟限制
-func (self *DaoApi) MinCountLimit(count int) {
+func (self *ComApi) MinCountLimit(count int) {
 	if self.minMax > 0 {
 		return
 	}

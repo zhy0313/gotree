@@ -36,10 +36,10 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-type DaoModel struct {
+type ComModel struct {
 	lib.Object
 	open    bool
-	daoName string
+	comName string
 	node    *chart.Node
 }
 
@@ -55,11 +55,11 @@ func init() {
 	orm.RegisterDriver("mssql", orm.DRMySQL)
 }
 
-func (self *DaoModel) DaoModel(child interface{}) *DaoModel {
+func (self *ComModel) ComModel(child interface{}) *ComModel {
 	self.Object.Gotree(self)
 	self.AddChild(self, child)
 	self.open = false
-	self.daoName = ""
+	self.comName = ""
 
 	self.AddSubscribe("DaoTelnet", self.daoTelnet)
 	self.AddSubscribe("ModelOn", self.modelOn)
@@ -71,16 +71,15 @@ type Conn interface {
 }
 
 //Orm 获取orm
-func (self *DaoModel) Conn() Conn {
+func (self *ComModel) Conn() Conn {
 	if !self.open {
-		helper.Log().WriteError("model error: 未开启dao:" + self.daoName)
-		panic("model error: 未开启dao")
+		helper.Exit("model error: 未开启com:" + self.comName)
 	}
-	if self.daoName == "" {
-		helper.Log().WriteError("这是一个未注册的dao")
+	if self.comName == "" {
+		helper.Exit("这是一个未注册的com")
 		return nil
 	}
-	o := orm.New(self.daoName)
+	o := orm.New(self.comName)
 	if modelProfiler {
 		o.RawCallBack(func(sql string, args []interface{}) {
 			self.profiler(sql, args...)
@@ -90,25 +89,24 @@ func (self *DaoModel) Conn() Conn {
 }
 
 //TestOn 单元测试 开启
-func (self *DaoModel) TestOn() {
+func (self *ComModel) TestOn() {
 	mode := helper.Config().String("sys::Mode")
 	if mode == "prod" {
-		helper.Log().WriteError("生产环境不可以使用单元测试model")
-		panic("生产环境不可以使用单元测试model")
+		helper.Exit("生产环境不可以使用单元测试model")
 	}
-	rpc.GoDict().Set("bseq", "ModelUnit")
+	rpc.GoDict().Set("gseq", "ModelUnit")
 	self.DaoInit()
-	if helper.Config().DefaultString("dao_on::"+self.daoName, "") == "" {
-		panic("未找到 dao.conf dao_on 域下的组件 " + self.daoName)
+	if helper.Config().DefaultString("com_on::"+self.comName, "") == "" {
+		helper.Exit("未找到 com.conf com_on 域下的组件 " + self.comName)
 	}
 	self.ormOn()
 }
 
 //daoOn 开启回调
-func (self *DaoModel) daoTelnet(args ...interface{}) {
+func (self *ComModel) daoTelnet(args ...interface{}) {
 	for _, arg := range args {
-		dao := arg.(daoNode)
-		if dao.Name == self.daoName {
+		dao := arg.(comNode)
+		if dao.Name == self.comName {
 			self.ormOn()
 			return
 		}
@@ -116,42 +114,41 @@ func (self *DaoModel) daoTelnet(args ...interface{}) {
 }
 
 //modelOn 开启回调
-func (self *DaoModel) modelOn(arg ...interface{}) {
-	daoName := arg[0].(string)
-	if daoName == self.daoName {
+func (self *ComModel) modelOn(arg ...interface{}) {
+	comName := arg[0].(string)
+	if comName == self.comName {
 		self.ormOn()
 	}
 }
 
 //Open
-func (self *DaoModel) Open() bool {
+func (self *ComModel) Open() bool {
 	return self.open
 }
 
 //ormOn 开启orm
-func (self *DaoModel) ormOn() {
+func (self *ComModel) ormOn() {
 	self.open = true
 
-	if !connectDao(self.daoName + "model") {
+	if !connectDao(self.comName + "model") {
 		return
 	}
 	//处理连接
 	driver := "mysql"
-	dbconfig := helper.Config().String("mysql::" + self.daoName)
-	dbMaxIdleConns := helper.Config().String("mysql::" + self.daoName + "MaxIdleConns")
-	dbMaxOpenConns := helper.Config().String("mysql::" + self.daoName + "MaxOpenConns")
+	dbconfig := helper.Config().String("mysql::" + self.comName)
+	dbMaxIdleConns := helper.Config().String("mysql::" + self.comName + "MaxIdleConns")
+	dbMaxOpenConns := helper.Config().String("mysql::" + self.comName + "MaxOpenConns")
 	if dbconfig == "" {
 		driver = "mssql"
-		dbconfig = helper.Config().String("mssql::" + self.daoName)
-		dbMaxIdleConns = helper.Config().String("mssql::" + self.daoName + "MaxIdleConns")
-		dbMaxOpenConns = helper.Config().String("mssql::" + self.daoName + "MaxOpenConns")
+		dbconfig = helper.Config().String("mssql::" + self.comName)
+		dbMaxIdleConns = helper.Config().String("mssql::" + self.comName + "MaxIdleConns")
+		dbMaxOpenConns = helper.Config().String("mssql::" + self.comName + "MaxOpenConns")
 	}
 
 	if dbconfig == "" {
-		helper.Log().WriteError(self.daoName + ":数据库配置信息不存在")
-		panic(self.daoName + ":数据库配置信息不存在")
+		helper.Exit(self.comName + ":数据库配置信息不存在")
 	}
-	_, err := orm.GetDB(self.daoName)
+	_, err := orm.GetDB(self.comName)
 	if err == nil {
 		//已注册
 		return
@@ -165,19 +162,17 @@ func (self *DaoModel) ormOn() {
 	maxIdleConns, ei := strconv.Atoi(dbMaxIdleConns)
 	maxOpenConns, eo := strconv.Atoi(dbMaxOpenConns)
 	if ei != nil || eo != nil || maxIdleConns == 0 || maxOpenConns == 0 || maxIdleConns > maxOpenConns {
-		helper.Log().WriteError("连接dao sql:" + self.daoName + "失败, 错误原因: MaxIdleConns 或MaxOpenConns 参数错误")
-		panic("连接dao sql:" + self.daoName + "失败, 错误原因: MaxIdleConns 或MaxOpenConns 参数错误")
+		helper.Exit("连接com db:" + self.comName + "失败, 错误原因: MaxIdleConns 或MaxOpenConns 参数错误")
 	}
-	helper.Log().WriteInfo("connect database: MaxIdleConns:" + dbMaxIdleConns + ", MaxOpenConns:" + dbMaxOpenConns + ", config:" + dbconfig)
-	err = orm.RegisterDataBase(self.daoName, driver, dbconfig, maxIdleConns, maxOpenConns)
+	helper.Log().WriteInfo("connect com " + self.comName + " database, MaxIdleConns:" + dbMaxIdleConns + ", MaxOpenConns:" + dbMaxOpenConns + ", config:" + dbconfig)
+	err = orm.RegisterDataBase(self.comName, driver, dbconfig, maxIdleConns, maxOpenConns)
 	if err != nil {
-		helper.Log().WriteError("连接dao sql:" + self.daoName + "失败, 错误原因:" + err.Error())
-		panic("连接dao sql:" + self.daoName + "失败, 错误原因:" + err.Error())
+		helper.Exit("连接com db:" + self.comName + "失败, 错误原因:" + err.Error())
 	}
 }
 
 //FormatArray 格式化in参数
-func (self *DaoModel) FormatArray(args ...interface{}) (list []interface{}) {
+func (self *ComModel) FormatArray(args ...interface{}) (list []interface{}) {
 	for _, item := range args {
 		slice := reflect.ValueOf(item)
 		if slice.Kind() != reflect.Slice {
@@ -199,7 +194,7 @@ func (self *DaoModel) FormatArray(args ...interface{}) (list []interface{}) {
 }
 
 //FormatPlaceholder 格式化in参数占位符
-func (self *DaoModel) FormatPlaceholder(arg interface{}) string {
+func (self *ComModel) FormatPlaceholder(arg interface{}) string {
 	slice := reflect.ValueOf(arg)
 	if slice.Kind() != reflect.Slice {
 		return ""
@@ -213,14 +208,14 @@ func (self *DaoModel) FormatPlaceholder(arg interface{}) string {
 	return strings.Join(result, ",")
 }
 
-func (self *DaoModel) Hash(data interface{}, mod int) int {
+func (self *ComModel) Hash(data interface{}, mod int) int {
 	return node.HashNodeSum(data, mod)
 }
 
 //profiler 分析
-func (self *DaoModel) profiler(ssql string, args ...interface{}) {
+func (self *ComModel) profiler(ssql string, args ...interface{}) {
 	dict := rpc.GoDict()
-	if dict == nil || dict.Get("bseq") == nil {
+	if dict == nil || dict.Get("gseq") == nil {
 		return
 	}
 	if strings.Contains(ssql, "EXPLAIN") {
@@ -237,7 +232,7 @@ func (self *DaoModel) profiler(ssql string, args ...interface{}) {
 		Type  string
 	}
 	explainLog := ""
-	o := orm.New(self.daoName)
+	o := orm.New(self.comName)
 	_, e := o.Raw("EXPLAIN "+ssql, args...).QueryRows(&explain)
 	tables := []string{}
 	warn := false
@@ -263,8 +258,8 @@ func (self *DaoModel) profiler(ssql string, args ...interface{}) {
 		helper.Log().WriteInfo("sql profiler:", explainLog, "source :("+sourceSql+")")
 	}
 
-	bseq := dict.Get("bseq")
-	str, ok := bseq.(string)
+	gseq := dict.Get("gseq")
+	str, ok := gseq.(string)
 	if !ok {
 		return
 	}
@@ -303,20 +298,20 @@ func profilerSync(key string) (exist bool) {
 	return
 }
 
-func (self *DaoModel) Connections(m map[string]int) {
+func (self *ComModel) Connections(m map[string]int) {
 	if !self.open {
 		return
 	}
-	db, err := orm.GetDB(self.daoName)
+	db, err := orm.GetDB(self.comName)
 	if err != nil {
 		return
 	}
-	m[self.daoName] = db.Stats().OpenConnections
+	m[self.comName] = db.Stats().OpenConnections
 }
 
-func (self *DaoModel) DaoInit() {
-	if self.daoName == "" {
-		self.daoName = self.TopChild().(daoName).Dao()
+func (self *ComModel) DaoInit() {
+	if self.comName == "" {
+		self.comName = self.TopChild().(comName).Com()
 	}
 }
 

@@ -21,3 +21,11 @@ func Testing() bool {
 	}
 	return strings.Contains(wd, uintDir)
 }
+
+func Exit(errorMsg ...string) {
+	if len(errorMsg) == 0 {
+		os.Exit(0)
+	}
+	Log().WriteError(errorMsg)
+	os.Exit(-1)
+}
