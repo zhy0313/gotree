@@ -80,10 +80,34 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
 ### 分层
 架构主要分为4层。第一层基类 __BusinessController__，作为 Business 的入口控制器, 主要职责有组织和协调Service、逻辑处理。 第二层基类 __BusinessService__, 作为 __BusinessController__ 的下沉层， 主要下沉的职责有拆分、治理、解耦、复用、使用Dao。 第三次基类 __DaoController__ ，作为 Dao 的入口控制器，主要职责有组织数据、解耦数据和逻辑、抽象数据源、使用数据源。 第四层数据源基类 __DaoModel__ 数据库表模型数据源基类、 __DaoMemory__ 内存数据源基类、 __DaoCache__ redis数据源基类、 __DaoApi__ Http数据源基类。
 
+### 使用 gateway
+```go
+    // 1. 模拟api网关调用，等同 beego、gin 等api gateway, 以及 tcp 网关项目.
+	// 2. 实际应用中 business 分布在多个物理机器.  gateway.AppendBusiness 因填写多机器的内网ip.
+	func main() {
+		gateway.AppendBusiness("192.168.1.1:8888")
+		gateway.AppendBusiness("192.168.1.2:8888")
+		gateway.AppendBusiness("192.168.1.3:8888")
+        gateway.Run()
+        
+        //创建 business 调用命令
+        cmd := new(business_cmd.Store).Gotree([]int64{1, 2})
+        //创建 business 返回数据
+        value := business_value.Store{}
+        
+        //设置自定义头，透传数据
+        cmd.SetHeader("", "")
+        //可直接设置http头
+        cmd.SetHttpHeader(head) 
+        gateway.RpcClient().Call(cmd, &value)
+        //response value ....
+	}
+```
+
 ### 使用 BusinessController  
 ```go
     /* 
-         learning/business/controllers.go
+         learning/business/controllers/controllers.go
     */
     func init() {
         //注册 ProductController 控制器
@@ -133,4 +157,58 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
         result.List, e = productSer.Store()
         return
     }
+```
+
+### 使用 BusinessService
+```go
+    /* 
+         learning/business/service/product.go
+    */
+    func init() {
+        //注册 service
+        business.RegisterService(new(Product).Gotree())
+    }
+
+    type Product struct {
+        //继承 BusinessService 基类
+        business.BusinessService
+    }
+
+    // gotree 风格构造
+    func (self *Product) Gotree() *Product {
+        self.BusinessService.Gotree(self)
+        return self
+    }
+
+    // 读取商品服务 返回一个商品信息匿名结构体数组。
+    func (self *Product) Store() (result []struct {
+        Id    int64 //商品 id
+        Price int64 //商品价格
+        Desc  string //商品描述
+    }, e error) {
+
+        //创建 dao调用命令
+        cmdPt := new(dao_cmd.ProductGetList).Gotree([]int64{1, 2})
+        //创建 dao返回数据
+        store := dao_value.ProductGetList{}
+
+        //CallDao 调用远程服务器的dao 入参cmdPt 出参store
+        e = self.CallDao(cmdPt, &store)
+        if e == helper.ErrBreaker {
+            //熔断处理
+            helper.Log().WriteInfo("Store ErrBreaker")
+            return
+        }
+        result = store.List
+        return
+    }
+```
+
+### 使用  Protocol
+```go
+    /* 
+        business 远程调用 learning/protocol/business_cmd/product.go
+        dao 远程调用 learning/protocol/dao_cmd/product.go
+    */
+
 ```

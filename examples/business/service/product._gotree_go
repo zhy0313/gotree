@@ -76,14 +76,6 @@ func (self *Product) Store() (result []struct {
 		helper.Log().WriteInfo("Store ErrBreaker")
 		return
 	}
-	if e != nil {
-		return
-	}
-
-	//反射升序排序
-	helper.SliceSortReverse(&store.List, "Id")
-	//反射降序排序
-	helper.SliceSort(&store.List, "Id")
 	result = store.List
 	return
 }
