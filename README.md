@@ -82,12 +82,14 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
 
 ### 使用 gateway
 ```go
-    // 1. 模拟api网关调用，等同 beego、gin 等api gateway, 以及 tcp 网关项目.
-	// 2. 实际应用中 business 分布在多个物理机器.  gateway.AppendBusiness 因填写多机器的内网ip.
-	func main() {
-		gateway.AppendBusiness("192.168.1.1:8888")
-		gateway.AppendBusiness("192.168.1.2:8888")
-		gateway.AppendBusiness("192.168.1.3:8888")
+/*
+    1. 模拟api网关调用，等同 beego、gin 等api gateway, 以及 tcp 网关项目.
+    2. 实际应用中 business 分布在多个物理机器.  gateway.AppendBusiness 因填写多机器的内网ip.
+*/
+    func main() {
+        gateway.AppendBusiness("192.168.1.1:8888")
+        gateway.AppendBusiness("192.168.1.2:8888")
+        gateway.AppendBusiness("192.168.1.3:8888")
         gateway.Run()
         
         //创建 business 调用命令
@@ -126,7 +128,7 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
         return self
     }
 
-    //每一个 APIGateway 触发的 rpc 动作调用 都会创造一个 ProductController 对象， 并且调用 Prepare。
+    //每一个 APIGateway 触发的 rpc 动作调用，都会创造一个 ProductController 对象，并且调用 Prepare。
     func (self *ProductController) Prepare(method string, argv interface{}) {
         //调用父类 Prepare
         self.BusinessController.Prepare(method, argv)
@@ -141,7 +143,7 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
     }
 
     /*
-        这是一个查看商品列表的 Action, cmd 是入参，result 是出参， 在 protocol中定义，下文详细介绍。
+        这是一个查看商品列表的 Action,cmd 是入参，result 是出参，在 protocol中定义，下文详细介绍。
     */
     func (self *ProductController) Store(cmd business_cmd.Store, result *business_value.Store) (e error) {
         var (
