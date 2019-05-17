@@ -131,7 +131,7 @@ func (self *log) infoRun() {
 //WriteError 写入错误
 func (self *log) WriteError(str ...interface{}) {
 	stack := string(debug.Stack())
-	str = append(str, "stack:"+stack)
+	str = append(str, "\n"+stack)
 	text := []interface{}{}
 	if no := self.BseqNo(); no != "" {
 		text = append(text, "gseq:"+no)

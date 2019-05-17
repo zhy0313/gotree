@@ -3,7 +3,6 @@ package helper
 import (
 	"errors"
 	"os"
-	"runtime"
 	"strings"
 )
 
@@ -15,11 +14,10 @@ type VoidValue struct {
 
 func Testing() bool {
 	wd, _ := os.Getwd()
-	uintDir := "/unit"
-	if runtime.GOOS == "windows" {
-		uintDir = "\\unit"
+	if strings.Contains(wd, "/unit") || strings.Contains(wd, "\\unit") {
+		return true
 	}
-	return strings.Contains(wd, uintDir)
+	return false
 }
 
 func Exit(errorMsg ...string) {

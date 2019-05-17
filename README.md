@@ -1,6 +1,6 @@
 # gotree
 
-gotree 是一个垂直分布式框架。 gotree 的目标是轻松开发分布式服务，解放开发者心智。
+gotree 是一个垂直分布式框架。 gotree 的目标是轻松开发分布式服务，解放开发者心智负担。
 
 ## 特性
 * 熔断
@@ -50,6 +50,8 @@ $ gotree new learning
 4. learning 项目数据库安装、数据库用户密码配置。使用 source 或工具安装 learning.sql。
 ```sh
 $ mysql > source $GOPATH/src/learning/learning.sql
+# 编辑 db 连接信息，Com = Order、用户名 = root、密码 = 123123、地址 = 127.0.0.1、端口 = 3306、数据库 = learning_order
+# Order = "root:123123@tcp(127.0.0.1:3306)/learning_order?charset=utf8"
 $ vi $GOPATH/src/learning/dao/conf/dev/db.conf
 ```
 
@@ -90,7 +92,7 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
 > Dao-1        | Dao-2        | Dao-3
 
 ### 分层
-架构主要分为4层。第一层基类 __BusinessController__，作为 Business 的入口控制器, 主要职责有组织和协调Service、逻辑处理。 第二层基类 __BusinessService__, 作为 __BusinessController__ 的下沉层， 主要下沉的职责有拆分、治理、解耦、复用、使用Dao。 第三次基类 __ComController__ ，作为 Dao 的入口控制器，主要职责有组织数据、解耦数据和逻辑、抽象数据源、使用数据源。 第四层数据源基类 __ComModel__ 数据库表模型数据源基类、 __ComMemory__ 内存数据源基类、 __ComCache__ redis数据源基类、 __ComApi__ Http数据源基类。
+架构主要分为4层。第一层基类 __BusinessController__，作为 Business 的入口控制器, 主要职责有组织和协调Service、逻辑处理。 第二层基类 __BusinessService__, 作为 __BusinessController__ 的下沉层， 主要下沉的职责有拆分、治理、解耦、复用、使用Dao。 第三层基类 __ComController__ ，作为 Dao 的入口控制器，主要职责有组织数据、解耦数据和逻辑、抽象数据源、使用数据源。 第四层多种基类 __ComModel__ 数据库表模型基类、 __ComMemory__ 内存基类、 __ComCache__ redis基类、 __ComApi__ Http数据基类。
 
 ### 使用gateway
 ```go
@@ -399,3 +401,10 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
 ```
 
 ## 高级教程
+### 进阶使用
+1. 连接 redis
+```sh
+# 编辑 redis 连接信息，Com = Feature、 服务器地址 = 127.0.0.1、端口 = 6379 密码 = 、db = 0
+# Feature = "server=127.0.0.1:6379;password=;database=0"
+$ vi $GOPATH/src/learning/dao/conf/dev/cache.conf
+```

@@ -162,12 +162,12 @@ func (self *ComModel) ormOn() {
 	maxIdleConns, ei := strconv.Atoi(dbMaxIdleConns)
 	maxOpenConns, eo := strconv.Atoi(dbMaxOpenConns)
 	if ei != nil || eo != nil || maxIdleConns == 0 || maxOpenConns == 0 || maxIdleConns > maxOpenConns {
-		helper.Exit("连接com db:" + self.comName + "失败, 错误原因: MaxIdleConns 或MaxOpenConns 参数错误")
+		helper.Exit("连接 " + self.comName + " db 失败, MaxIdleConns 或 MaxOpenConns 参数错误")
 	}
 	helper.Log().WriteInfo("connect com " + self.comName + " database, MaxIdleConns:" + dbMaxIdleConns + ", MaxOpenConns:" + dbMaxOpenConns + ", config:" + dbconfig)
 	err = orm.RegisterDataBase(self.comName, driver, dbconfig, maxIdleConns, maxOpenConns)
 	if err != nil {
-		helper.Exit("连接com db:" + self.comName + "失败, 错误原因:" + err.Error())
+		helper.Exit("连接 " + self.comName + " 失败," + err.Error())
 	}
 }
 
