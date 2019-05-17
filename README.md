@@ -402,9 +402,21 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
 
 ## 高级教程
 ### 进阶使用
-1. 连接 redis
 ```sh
-# 编辑 redis 连接信息，Com = Feature、 服务器地址 = 127.0.0.1、端口 = 6379 密码 = 、db = 0
-# Feature = "server=127.0.0.1:6379;password=;database=0"
 $ vi $GOPATH/src/learning/dao/conf/dev/cache.conf
+# 编辑 redis 配置，Com = Feature、 服务器地址 = 127.0.0.1、端口 = 6379 密码 = 、db = 0
+# Feature = "server=127.0.0.1:6379;password=;database=0"
+
+$ vi $GOPATH/src/learning/dao/conf/dev/com.conf
+# 开启组件 Feature = 1，1代表组件ID, 如果要负载多台dao，在其他机器递增ID
+
+$ vi $GOPATH/src/learning/business/conf/dev/business.conf
+# 开启 TimerOn = "Feature"
+
+$ cd $GOPATH/src/learning/dao
+$ go run main.go
+$ cd $GOPATH/src/learning/business
+$ go run main.go
+
+# 查阅相关 Feature 代码
 ```
