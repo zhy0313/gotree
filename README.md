@@ -34,7 +34,7 @@ gotree 是一个垂直分布式框架。 gotree 的目标是轻松开发分布�
 - [配置文件](#helper)
 - [单元测试](#unit)
 - [命令](#command)
-- [分布实例](#dispersed)
+- [分布示例](#dispersed)
 
 
 ## 快速使用
@@ -775,15 +775,36 @@ $ go run main.go
 
 ### dispersed
 ```sh
+    # dao 实例 1
     $ cd $GOPATH/src/learning/dao
     $ go build
-    $ vi $GOPATH/src/learning/dao/conf/dispersed.conf
+    $ vi $GOPATH/src/learning/dao/conf/dev/dispersed.conf
     # 修改为 BusinessAddrs = "127.0.0.1:8888,127.0.0.1:18888"
     $ ./dao start #启动 dao 实例1
 
-    # dao 实例 2 配置
-    $ vi $GOPATH/src/learning/dao/conf/dispersed.conf
+    # dao 实例 2 
+    $ vi $GOPATH/src/learning/dao/conf/dev/dispersed.conf
     # 修改为
     # BindAddr = "127.0.0.1:16666"
+    $ vi $GOPATH/src/learning/dao/conf/dev/com.conf
+    # 修改为
+    # Order = 2
+    # User = 2
+    # Product = 2
+    $ ./dao start #启动 dao 实例2
 
+    # business 实例 1
+    $ cd $GOPATH/src/learning/business
+    $ go build
+    $ ./business start
+
+    # business 实例 2
+    $ vi $GOPATH/src/learning/business/conf/dev/dispersed.conf
+    # 修改为
+    # BindAddr = "0.0.0.0:18888"
+    $ ./business start
+    $ ps
+
+    # 执行单元测试
+    $ go test -v -count=1 -run TestStore $GOPATH/src/learning/business/unit/gateway_test.go
 ```
