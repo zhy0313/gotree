@@ -52,7 +52,7 @@ func (self *BusinessController) Gotree(child interface{}) *BusinessController {
 func (self *BusinessController) Service(child interface{}) {
 	err := _scl.Service(child)
 	if err != nil {
-		helper.Exit("飞哥:不要乱调用:" + err.Error())
+		helper.Exit("BusinessController-Service Load service failed error:" + err.Error())
 	}
 	return
 }
@@ -60,7 +60,7 @@ func (self *BusinessController) Service(child interface{}) {
 // ServiceBroadcast 调用所有注册service的method方法. 潜龙勿用,会使项目非常难以维护
 func (self *BusinessController) ServiceBroadcast(method string, arg interface{}) {
 	if e := _scl.Broadcast(method, arg); e != nil {
-		helper.Log().WriteError("Buesiness ServiceBroadcast errror:" + e.Error())
+		helper.Log().WriteError("BusinessController-ServiceBroadcast error:" + e.Error())
 	}
 }
 
