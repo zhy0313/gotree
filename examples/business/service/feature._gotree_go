@@ -72,11 +72,15 @@ func (self *Feature) Simple() (result []struct {
 	//group go并发
 	group := helper.NewGroup()
 	group.Add(func() error {
-		helper.Log().WriteInfo("WriteInfo")
+		//配置文件读取
+		mode := helper.Config().String("sys::Mode")
+		helper.Log().WriteInfo("WriteInfo", mode)
 		return nil
 	})
 	group.Add(func() error {
-		helper.Log().WriteWarn("WriteWarn")
+		//配置文件读取
+		len := helper.Config().DefaultInt("sys::LogWarnQueueLen", 512)
+		helper.Log().WriteWarn("WriteWarn", len)
 		return nil
 	})
 	group.Add(func() error {

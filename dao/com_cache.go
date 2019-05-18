@@ -47,7 +47,7 @@ func (self *ComCache) TestOn() {
 	}
 	self.DaoInit()
 	if helper.Config().DefaultString("com_on::"+self.comName, "") == "" {
-		helper.Exit("未找到 dao.conf com_on 域下的组件 " + self.comName)
+		helper.Exit("未找到 com.conf com_on 域下的组件 " + self.comName)
 	}
 	self.redisOn()
 }
@@ -82,14 +82,14 @@ func (self *ComCache) redisOn() {
 	}
 	redisinfo := helper.Config().String("redis::" + self.comName)
 	if redisinfo == "" {
-		helper.Log().WriteError("配置文件 dao:" + self.comName + "redis地址错误或未找到")
+		helper.Log().WriteError("配置文件 com:" + self.comName + "redis地址错误或未找到")
 	}
 	list := strings.Split(redisinfo, ";")
 	m := map[string]string{}
 	for _, item := range list {
 		kv := strings.Split(item, "=")
 		if len(kv) != 2 {
-			helper.Log().WriteError("配置文件 dao:" + self.comName + "redis地址错误")
+			helper.Log().WriteError("配置文件 com:" + self.comName + "redis地址错误")
 			continue
 		}
 		m[kv[0]] = kv[1]

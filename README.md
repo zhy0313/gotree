@@ -27,9 +27,12 @@ gotree 是一个垂直分布式框架。 gotree 的目标是轻松开发分布�
 - [DaoCmd](#dao_cmd)
 - [ComController](#com_controller)
 - [ComModel](#com_model)
+- [事务](#com_controller)
 - [进阶使用](#进阶使用)
 - [Timer](#timer)
 - [Helper](#helper)
+- [配置文件](#helper)
+- [单元测试](#unit)
 
 
 ## 快速使用
@@ -360,6 +363,27 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
         result.List, e = mProduct.Gets(cmd.Ids)
         return
     }
+
+    // 实现动作 Add， 事务示例
+    func (self *ProductController) Add(cmd dao_cmd.ProductAdd, result *helper.VoidValue) (e error) {
+        var (
+            mProduct *product.Product
+        )
+        *result = helper.VoidValue{}
+        self.Model(&mProduct)
+
+        // Transaction 执行事务，如果返回 不为 nil，触发回滚。 
+        self.Transaction(func() error {
+           _, e := mProduct.Add(cmd.Desc, cmd.Price)
+           if e != nil {
+               return
+           }
+           _, e = mProduct.Add(cmd.Desc, cmd.Price)
+           return e
+        })
+
+        return
+    }
 ```
 
 ### com_model
@@ -523,11 +547,15 @@ $ go run main.go
         //group go并发
         group := helper.NewGroup()
         group.Add(func() error {
-            helper.Log().WriteInfo("WriteInfo")
+            //配置文件读取 域名::key名
+            mode := helper.Config().String("sys::Mode")
+            helper.Log().WriteInfo("WriteInfo", mode)
             return nil
         })
         group.Add(func() error {
-            helper.Log().WriteWarn("WriteWarn")
+            //配置文件读取 域名::key名
+            len := helper.Config().DefaultInt("sys::LogWarnQueueLen", 512)
+            helper.Log().WriteWarn("WriteWarn", len)
             return nil
         })
         group.Add(func() error {
@@ -662,5 +690,49 @@ $ go run main.go
         data, err := self.HttpGet("/service/getIpInfo.php", map[string]interface{}{"ip": ip})
         //data, err := self.HttpPost("/service/getIpInfo.php", map[string]interface{}{"ip": ip})
         //data, err := self.HttpPostJson("/service/getIpInfo.php", map[string]interface{}{"ip": ip})
+    }
+```
+
+### unit
+```go
+    /* 
+        business 单元测试
+        代码目录  learning/business/unit
+        测试service对象，请在本机开启dao 进程。 TestOn : "Com组件名字:id"
+        TestOn 函数内部有引用框架，初始化、建立连接等。填写Com 即可使用。
+        执行命令 go test -v -run TestProduct $GOPATH/src/examples/business/unit/service_test.go
+    */
+    func TestProduct(t *testing.T) {
+        service := new(service.Product).Gotree()
+        //开启单元测试 填写 com
+        service.TestOn("Product:1", "User:1", "Order:1")
+        
+        t.Log(service.Store())
+        t.Log(service.Shopping(1, 1))
+    }
+
+    /*
+        dao 单元测试
+        代码目录  learning/dao/unit
+        TestOn 函数内部有引用框架，初始化、建立 redis、mysql 连接等。
+        执行命令 go test -v -run TestFeature $GOPATH/src/examples/dao/unit/feature_test.go
+    */
+    func TestFeature(t *testing.T) {
+        // 四种数据源对象的单元测试
+        api := new(api.TaoBaoIp).Gotree()
+        cache := new(cache.Course).Gotree()
+        memory := new(memory.Course).Gotree()
+        model := new(product.Product).Gotree()
+
+        //开启单元测试
+        api.TestOn()
+        cache.TestOn()
+        memory.TestOn()
+        model.TestOn()
+
+        t.Log(api.GetIpInfo("49.87.27.95"))
+        t.Log(cache.TestGet())
+        t.Log(memory.TestGet())
+        t.Log(model.Gets([]int64{1, 2, 3, 4}))
     }
 ```

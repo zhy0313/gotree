@@ -53,5 +53,5 @@ func TestTaoBaoIp(t *testing.T) {
 	//开启单元测试
 	object.TestOn()
 
-	t.Log(object.Country("49.87.27.95"))
+	t.Log(object.GetIpInfo("49.87.27.95"))
 }
