@@ -145,7 +145,15 @@ func (self *InnerServerController) BusinessInfo(arg interface{}, ret *string) er
 	return nil
 }
 
-//BusinessInfo Business服务信息
+// ComQpsBeginTime
+func (self *InnerServerController) ComQpsBeginTime(arg interface{}, ret *string) error {
+	var t int64
+	self.NotitySubscribe("ComQpsBeginTime", &t)
+	*ret = time.Unix(t, 0).Format("15:04:05")
+	return nil
+}
+
+// ComQps
 func (self *InnerServerController) ComQps(arg interface{}, ret *string) error {
 	var list []struct {
 		ServiceMethod string

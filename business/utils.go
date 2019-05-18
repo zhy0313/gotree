@@ -71,7 +71,7 @@ func viewQps(top int) {
 	var replys string
 	var restart string
 	client.Call("InnerServer.ComQps", 100, &replys)
-	client.Call("InnerServer.DaoQpsRestartTime", 100, &restart)
+	client.Call("InnerServer.ComQpsBeginTime", 100, &restart)
 	client.Close()
 	if top == 1 {
 		fmt.Printf("%46s\n", "Com qps clear: "+restart)
