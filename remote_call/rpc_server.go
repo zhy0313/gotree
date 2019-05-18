@@ -58,12 +58,12 @@ func RpcServerRun(args ...interface{}) *rpcServer {
 		var err error
 		rs.socket, err = net.Listen("tcp", fmt.Sprintf("%s:%d", ip, port+index))
 		if err != nil && index == 9 {
-			helper.Log().WriteError(err.Error())
+			helper.Log().Error(err.Error())
 			panic(err.Error())
 		}
 		if err == nil {
 			port += index
-			helper.Log().WriteInfo("rpc server bind addr:" + fmt.Sprintf("%s:%d", ip, port))
+			helper.Log().Notice("rpc server bind addr:" + fmt.Sprintf("%s:%d", ip, port))
 			break
 		}
 	}
@@ -87,7 +87,7 @@ func RpcServerRegister(controller interface{}) {
 
 	rc, ok := controller.(rpcname)
 	if !ok {
-		helper.Log().WriteError("RpcServerRegister:registration failed:" + reflect.TypeOf(controller).String())
+		helper.Log().Error("RpcServerRegister:registration failed:" + reflect.TypeOf(controller).String())
 	}
 	rs.register(rc.RpcName(), controller)
 }
@@ -128,7 +128,7 @@ func (self *rpcServer) unregister(name string) {
 func (self *rpcServer) register(name string, controller interface{}) {
 	err := self.srv.RegisterName(name, controller)
 	if err != nil {
-		helper.Log().WriteError(err.Error())
+		helper.Log().Error(err.Error())
 	}
 }
 

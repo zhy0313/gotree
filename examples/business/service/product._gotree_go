@@ -73,7 +73,7 @@ func (self *Product) Store() (result []struct {
 	e = self.CallDao(cmdPt, &store)
 	if e == helper.ErrBreaker {
 		//熔断处理
-		helper.Log().WriteInfo("Store ErrBreaker")
+		helper.Log().Notice("Store ErrBreaker")
 		return
 	}
 	result = store.List

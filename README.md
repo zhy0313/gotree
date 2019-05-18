@@ -155,14 +155,14 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
     func (self *ProductController) Prepare(method string, argv interface{}) {
         //调用父类 Prepare
         self.BusinessController.Prepare(method, argv)
-        helper.Log().WriteInfo("Prepare:", method, argv)
+        helper.Log().Notice("Prepare:", method, argv)
     }
 
     //每一个 APIGateway 触发的 rpc 动作调用结束 都会触发 Finish。
     func (self *ProductController) Finish(method string, reply interface{}, e error) {
         self.BusinessController.Finish(method, reply, e)
         //打印日志
-        helper.Log().WriteInfo("Finish:", method, fmt.Sprint(reply), e)
+        helper.Log().Notice("Finish:", method, fmt.Sprint(reply), e)
     }
 
     /*
@@ -222,7 +222,7 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
         e = self.CallDao(cmdPt, &store)
         if e == helper.ErrBreaker {
             //熔断处理
-            helper.Log().WriteInfo("Store ErrBreaker")
+            helper.Log().Notice("Store ErrBreaker")
             return
         }
         result = store.List
@@ -552,17 +552,17 @@ $ go run main.go
         group.Add(func() error {
             //配置文件读取 域名::key名
             mode := helper.Config().String("sys::Mode")
-            helper.Log().WriteInfo("WriteInfo", mode)
+            helper.Log().Notice("Notice", mode)
             return nil
         })
         group.Add(func() error {
             //配置文件读取 域名::key名
             len := helper.Config().DefaultInt("sys::LogWarnQueueLen", 512)
-            helper.Log().WriteWarn("WriteWarn", len)
+            helper.Log().Warning("Warning", len)
             return nil
         })
         group.Add(func() error {
-            helper.Log().WriteDebug("WriteDebug")
+            helper.Log().Debug("Debug")
             return nil
         })
 

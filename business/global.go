@@ -89,7 +89,7 @@ func Run(args ...interface{}) {
 
 	//通知所有定时服务
 	_tsl.NotitySubscribe("TimerOn", timerServices()...)
-	helper.Log().WriteInfo("business run ....")
+	helper.Log().Notice("business run ....")
 	var client *remote_call.RpcClient
 	var breaker *remote_call.RpcBreak
 	_ssl.GetComponent(&client)
@@ -98,7 +98,7 @@ func Run(args ...interface{}) {
 	breaker.RunTick()
 	rpcSer := remote_call.RpcServerRun(bindAddr)
 	_scl.NotitySubscribe("shutdown")
-	helper.Log().WriteInfo("business close...")
+	helper.Log().Notice("business close...")
 	breaker.StopTick()
 	//优雅关闭
 	for index := 0; index < 30; index++ {
@@ -106,7 +106,7 @@ func Run(args ...interface{}) {
 		num := rpc.CurrentCallNum()
 		timenum := lib.CurrentTimeNum()
 		anum := AsyncNum()
-		helper.Log().WriteInfo("business run close: Timing service surplus:", timenum, "Request service surplus:", num, "Async service surplus:", anum)
+		helper.Log().Notice("business run close: Timing service surplus:", timenum, "Request service surplus:", num, "Async service surplus:", anum)
 		if num <= 0 && anum <= 0 && timenum <= 0 {
 			break
 		}
@@ -114,7 +114,7 @@ func Run(args ...interface{}) {
 	}
 	rpcSer.Close()
 	client.Close()
-	helper.Log().WriteInfo("business close: success")
+	helper.Log().Notice("business close: success")
 	helper.Log().Close()
 }
 
@@ -126,11 +126,6 @@ func timerServices() (list []interface{}) {
 }
 
 func logOn() {
-	mode := helper.Config().String("sys::Mode")
-	if mode != "prod" {
-		//如果是测试当前目录创建日志文件 并开启fmt.print
-		helper.Log().Debug()
-	}
 	dir := helper.Config().DefaultString("sys::LogDir", "log")
 	//生产环境定位 ~/log/xx目录
 	helper.Log().Init(dir, rpc.GoDict())

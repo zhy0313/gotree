@@ -162,7 +162,7 @@ func daoOn() {
 	for k, v := range openDao {
 		id, e := strconv.Atoi(v)
 		if e != nil {
-			helper.Log().WriteError("daoOn-openDao dao id error:", k, v)
+			helper.Log().Error("daoOn-openDao dao id error:", k, v)
 			continue
 		}
 		var comName string
@@ -172,7 +172,7 @@ func daoOn() {
 			}
 		}
 		if comName == "" {
-			helper.Log().WriteError("daoOn-openDao error:Not found com:", k)
+			helper.Log().Error("daoOn-openDao error:Not found com:", k)
 			continue
 		}
 
@@ -218,7 +218,7 @@ func Run(args ...interface{}) {
 	rpcser := remote_call.RpcServerRun(bindAddr, func(svrName string) {
 		for _, item := range _daoOnList {
 			if svrName == item.Name {
-				helper.Log().WriteInfo("startup:", svrName, "id:", item.Id)
+				helper.Log().Notice("startup:", svrName, "id:", item.Id)
 				_daoOnList = append(_daoOnList, item)
 				return
 			}
@@ -231,7 +231,7 @@ func Run(args ...interface{}) {
 	for index := 0; index < 30; index++ {
 		num := rpc.CurrentCallNum()
 		qlen := allQueueLen()
-		helper.Log().WriteInfo("Run dao close: Request service surplus:", num, "Queue surplus:", qlen)
+		helper.Log().Notice("Run dao close: Request service surplus:", num, "Queue surplus:", qlen)
 		if num <= 0 && qlen <= 0 {
 			break
 		}
@@ -240,14 +240,14 @@ func Run(args ...interface{}) {
 	_esl.NotitySubscribe("shutdown")
 	rpcser.Close()
 	tick.Stop()
-	helper.Log().WriteInfo("dao close")
+	helper.Log().Notice("dao close")
 	helper.Log().Close()
 }
 
 func initInnerClient(ic *remote_call.InnerClient) {
 	baddrs := helper.Config().String("dispersed::BusinessAddrs")
 	if baddrs == "" {
-		helper.Log().WriteError("initInnerClient-BusinessAddrs baddrs address is empty.")
+		helper.Log().Error("initInnerClient-BusinessAddrs baddrs address is empty.")
 	}
 	for index := 0; index < len(_daoOnList); index++ {
 		ic.AddDaoByNode(_daoOnList[index].Name, _daoOnList[index].Id, _daoOnList[index].Extra...)
@@ -271,11 +271,6 @@ func daos() (list []interface{}) {
 }
 
 func logOn() {
-	mode := helper.Config().String("sys::Mode")
-	if mode != "prod" {
-		//如果是测试当前目录创建日志文件 并开启fmt.print
-		helper.Log().Debug()
-	}
 	dir := helper.Config().DefaultString("sys::LogDir", "log")
 	helper.Log().Init(dir, rpc.GoDict())
 }

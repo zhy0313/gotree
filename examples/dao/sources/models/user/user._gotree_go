@@ -60,7 +60,7 @@ func (self *User) Get(uid int64) (result struct {
 }, e error) {
 	e = self.Conn().Raw("SELECT id,name,money,camelCase,under_score_case FROM `user` where id = ?", uid).QueryRow(&result)
 	if e == orm.ErrNoRows {
-		helper.Log().WriteInfo("ErrNoRows")
+		helper.Log().Notice("ErrNoRows")
 	}
 	return
 }

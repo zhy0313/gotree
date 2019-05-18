@@ -66,7 +66,7 @@ func (self *BusinessService) TestOn(testDaos ...string) {
 	mode := helper.Config().String("sys::Mode")
 	//生产环境不可进行单元测试
 	if mode == "prod" {
-		helper.Log().WriteError("BusinessService-TestOn Unit test service is not available in production environments")
+		helper.Log().Error("BusinessService-TestOn Unit test service is not available in production environments")
 		os.Exit(-1)
 	}
 	rpc.GoDict().Set("gseq", "ServiceUnit")

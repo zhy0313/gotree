@@ -107,14 +107,14 @@ func (self *daoQueue) assistRun() {
 func (self *daoQueue) execute(f queueCast) {
 	defer func() {
 		if perr := recover(); perr != nil {
-			helper.Log().WriteWarn(self.com+"."+self.name+" queue: ", fmt.Sprint(perr))
+			helper.Log().Warning(self.com+"."+self.name+" queue: ", fmt.Sprint(perr))
 		}
 	}()
 
 	rpc.GoDict().Set("gseq", f.gseq)
 	err := f.f()
 	if err != nil {
-		helper.Log().WriteWarn(self.com+"."+self.name+" queue: ", err)
+		helper.Log().Warning(self.com+"."+self.name+" queue: ", err)
 	}
 }
 

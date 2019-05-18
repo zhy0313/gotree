@@ -29,13 +29,13 @@ func (self *UserController) Gotree() *UserController {
 // Prepare
 func (self *UserController) Prepare(method string, argv interface{}) {
 	self.UserHook.Prepare(method, argv)
-	helper.Log().WriteInfo("Prepare:", method, argv)
+	helper.Log().Notice("Prepare:", method, argv)
 }
 
 //Finish
 func (self *UserController) Finish(method string, reply interface{}, e error) {
 	self.UserHook.Finish(method, reply, e)
-	helper.Log().WriteInfo("Finish:", method, fmt.Sprint(reply), e)
+	helper.Log().Notice("Finish:", method, fmt.Sprint(reply), e)
 }
 
 // Register
@@ -45,7 +45,7 @@ func (self *UserController) Register(cmd business_cmd.UserRegister, result *busi
 	)
 	*result = business_value.UserRegister{}
 	//读取cmd头
-	helper.Log().WriteInfo("UserController.test_head:", cmd.Header("test_head"))
+	helper.Log().Notice("UserController.test_head:", cmd.Header("test_head"))
 
 	self.Service(&userSer)
 	id, e := userSer.Register(cmd.UserName)

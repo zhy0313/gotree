@@ -60,11 +60,8 @@ func AppDaemon() {
 		}
 		//启动时间和panic时间 如果在3秒内 停止服务
 		if time.Now().Unix()-startTime <= startSecs {
-			helper.Log().WriteDaemonError("AppDaemon-error:", stderr.String())
 			os.Exit(1)
 		}
-
-		helper.Log().WriteDaemonError("AppDaemon-error restart after 2 seconds, error:", stderr.String())
 		time.Sleep(2 * time.Second)
 	}
 }

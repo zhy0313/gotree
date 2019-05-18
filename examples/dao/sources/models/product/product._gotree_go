@@ -46,7 +46,7 @@ func (self *Product) Get(id int64) (product struct {
 }, e error) {
 	e = self.Conn().Raw("SELECT id,price,`desc` FROM `product` where id = ?", id).QueryRow(&product)
 	if e == orm.ErrNoRows {
-		helper.Log().WriteInfo("ErrNoRows")
+		helper.Log().Notice("ErrNoRows")
 	}
 	return
 }

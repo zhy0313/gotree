@@ -41,12 +41,12 @@ func (self *FeatureController) Gotree() *FeatureController {
 // Prepare
 func (self *FeatureController) Prepare(method string, argv interface{}) {
 	//日志输出的bseq 全局唯一
-	helper.Log().WriteInfo("Prepare:", method, argv)
+	helper.Log().Notice("Prepare:", method, argv)
 }
 
 //Finish
 func (self *FeatureController) Finish(method string, reply interface{}, e error) {
-	helper.Log().WriteInfo("Finish:", method, fmt.Sprint(reply), e)
+	helper.Log().Notice("Finish:", method, fmt.Sprint(reply), e)
 }
 
 // Course 特性相关教程
@@ -67,19 +67,19 @@ func (self *FeatureController) Course(cmd dao_cmd.Course, result *helper.VoidVal
 
 	//redis写读
 	cacheCourse.TestSet(cmd.CourseInt, cmd.CourseString)
-	helper.Log().WriteInfo(cacheCourse.TestGet())
+	helper.Log().Notice(cacheCourse.TestGet())
 
 	//memory写读
 	memoryCourse.TestSet(cmd.CourseInt, cmd.CourseString)
-	helper.Log().WriteInfo(memoryCourse.TestGet())
+	helper.Log().Notice(memoryCourse.TestGet())
 
 	//http数据
-	helper.Log().WriteInfo(geoApi.GetIpInfo("49.87.27.95"))
+	helper.Log().Notice(geoApi.GetIpInfo("49.87.27.95"))
 
 	//队列处理
 	self.Queue("FeatureQueue", func() error {
 		time.Sleep(1 * time.Second)
-		helper.Log().WriteInfo("FeatureQueue")
+		helper.Log().Notice("FeatureQueue")
 		return nil
 	})
 

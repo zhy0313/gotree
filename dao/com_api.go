@@ -106,7 +106,7 @@ func (self *ComApi) HttpGet(apiAddr string, args map[string]interface{}, callbac
 	for index := 0; index < 2; index++ {
 		e = tp.Go(fun)
 		if mode == "dev" {
-			helper.Log().WriteInfo("ApiGet:", self.host+apiAddr, "ReqData:", args, "ResData:", string(result), "error:", e)
+			helper.Log().Notice("ApiGet:", self.host+apiAddr, "ReqData:", args, "ResData:", string(result), "error:", e)
 		}
 		if e != nil {
 			continue
@@ -148,7 +148,7 @@ func (self *ComApi) HttpPost(apiAddr string, args map[string]interface{}, callba
 	for index := 0; index < 2; index++ {
 		e = tp.Go(fun)
 		if mode == "dev" {
-			helper.Log().WriteInfo("ApiPost:", self.host+apiAddr, "ReqData:", args, "ResData:", string(result), "error:", e)
+			helper.Log().Notice("ApiPost:", self.host+apiAddr, "ReqData:", args, "ResData:", string(result), "error:", e)
 		}
 		if e != nil {
 			continue
@@ -188,7 +188,7 @@ func (self *ComApi) HttpPostJson(apiAddr string, raw interface{}, callback ...Re
 	for index := 0; index < 2; index++ {
 		e = tp.Go(fun)
 		if mode == "dev" {
-			helper.Log().WriteInfo("ApiPostJson:", self.host+apiAddr, "ReqData:", raw, "ResData:", string(result), "error:", e)
+			helper.Log().Notice("ApiPostJson:", self.host+apiAddr, "ReqData:", raw, "ResData:", string(result), "error:", e)
 		}
 		if e != nil {
 			continue

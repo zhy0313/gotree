@@ -161,7 +161,7 @@ func (self *ComModel) ormOn() {
 	if ei != nil || eo != nil || maxIdleConns == 0 || maxOpenConns == 0 || maxIdleConns > maxOpenConns {
 		helper.Exit("ComModel-ormOn Failure to connect " + self.comName + " db, MaxIdleConns or MaxOpenConns are invalid arguments")
 	}
-	helper.Log().WriteInfo("ComModel-ormOn Connect com " + self.comName + " database, MaxIdleConns:" + dbMaxIdleConns + ", MaxOpenConns:" + dbMaxOpenConns + ", config:" + dbconfig)
+	helper.Log().Notice("ComModel-ormOn Connect com " + self.comName + " database, MaxIdleConns:" + dbMaxIdleConns + ", MaxOpenConns:" + dbMaxOpenConns + ", config:" + dbconfig)
 	err = orm.RegisterDataBase(self.comName, driver, dbconfig, maxIdleConns, maxOpenConns)
 	if err != nil {
 		helper.Exit("ComModel-ormOn-RegisterDataBase Connect " + self.comName + " error:," + err.Error())
@@ -221,7 +221,7 @@ func (self *ComModel) profiler(ssql string, args ...interface{}) {
 	sourceSql := fmt.Sprintf(strings.Replace(ssql, "?", "%v", -1), args...)
 	sql := strings.ToLower(sourceSql)
 	if strings.Contains(sql, "delete") || strings.Contains(sql, "update") || strings.Contains(sql, "insert") || strings.Contains(sql, "count") || strings.Contains(sql, "sum") || strings.Contains(sql, "max") {
-		helper.Log().WriteInfo("sql profiler:", sourceSql)
+		helper.Log().Notice("sql profiler:", sourceSql)
 		return
 	}
 	var explain []struct {
@@ -250,9 +250,9 @@ func (self *ComModel) profiler(ssql string, args ...interface{}) {
 		explainLog = "explain :(" + explainLog + ")"
 	}
 	if warn {
-		helper.Log().WriteWarn("sql profiler:", explainLog, "source :("+sourceSql+")")
+		helper.Log().Warning("sql profiler:", explainLog, "source :("+sourceSql+")")
 	} else {
-		helper.Log().WriteInfo("sql profiler:", explainLog, "source :("+sourceSql+")")
+		helper.Log().Notice("sql profiler:", explainLog, "source :("+sourceSql+")")
 	}
 
 	gseq := dict.Get("gseq")
@@ -275,7 +275,7 @@ func (self *ComModel) profiler(ssql string, args ...interface{}) {
 			delete(modelProfilerCount, str+"_"+table)
 			modelProfilerSync.Unlock()
 			if tableCount > 1 && ok {
-				helper.Log().WriteWarn("在一个bseq:" + str + " 内读取表'" + table + "' " + fmt.Sprint(tableCount) + "次")
+				helper.Log().Warning("在一个bseq:" + str + " 内读取表'" + table + "' " + fmt.Sprint(tableCount) + "次")
 			}
 		}()
 	}

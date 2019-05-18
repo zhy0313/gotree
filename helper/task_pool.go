@@ -99,7 +99,7 @@ func (self *TaskPool) runTask() {
 	var callTask *task
 	defer func() {
 		if perr := recover(); perr != nil {
-			Log().WriteError(perr)
+			Log().Error(perr)
 			if callTask != nil {
 				callTask.done <- errors.New(fmt.Sprint(perr))
 			}

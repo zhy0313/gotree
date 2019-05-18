@@ -112,7 +112,7 @@ func (self *timer) triggerLoop(name string) {
 	defer func() {
 		atomic.AddInt32(&currentTimeNum, -1)
 		if perr := recover(); perr != nil {
-			helper.Log().WriteError(perr)
+			helper.Log().Error(perr)
 		}
 		_gGoDict.Remove()
 	}()
@@ -149,7 +149,7 @@ func (self *timer) triggerLoop(name string) {
 func (self *timer) tickLoop() {
 	defer func() {
 		if perr := recover(); perr != nil {
-			helper.Log().WriteError(perr)
+			helper.Log().Error(perr)
 		}
 	}()
 	for {
@@ -165,7 +165,7 @@ func (self *timer) tickLoop() {
 func (self *timer) defaultLoop() {
 	defer func() {
 		if perr := recover(); perr != nil {
-			helper.Log().WriteError(perr)
+			helper.Log().Error(perr)
 		}
 	}()
 	for {
@@ -177,7 +177,7 @@ func (self *timer) defaultLoop() {
 func (self *timer) dayLoop(hour, minute int, name string) {
 	defer func() {
 		if perr := recover(); perr != nil {
-			helper.Log().WriteError(perr)
+			helper.Log().Error(perr)
 		}
 		_gGoDict.Remove()
 	}()

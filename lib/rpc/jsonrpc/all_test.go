@@ -52,7 +52,7 @@ func (t *Arith) Div(args *Args, reply *Reply) error {
 }
 
 func (t *Arith) Error(args *Args, reply *Reply) error {
-	helper.Log().WriteError("ERROR")
+	helper.Log().Error("ERROR")
 }
 
 func init() {

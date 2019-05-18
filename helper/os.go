@@ -24,6 +24,6 @@ func Exit(errorMsg ...string) {
 	if len(errorMsg) == 0 {
 		os.Exit(0)
 	}
-	Log().WriteError(errorMsg)
+	Log().Error(errorMsg)
 	os.Exit(-1)
 }

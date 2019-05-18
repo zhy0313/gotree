@@ -22,7 +22,7 @@ import (
 	"strconv"
 )
 
-//Slice 是否在数组内
+//InSlice 是否在数组内
 func InSlice(array interface{}, item interface{}) bool {
 	values := reflect.ValueOf(array)
 	if values.Kind() != reflect.Slice {
@@ -60,7 +60,7 @@ func NewSlice(dsc interface{}, len int) error {
 func SliceDelete(arr interface{}, indexArr ...int) {
 	dscValue := reflect.ValueOf(arr)
 	if dscValue.Elem().Kind() != reflect.Slice {
-		Log().WriteError("dsc error")
+		Log().Error("dsc error")
 	}
 	result := reflect.MakeSlice(reflect.TypeOf(arr).Elem(), 0, dscValue.Elem().Len()-len(indexArr))
 	for index := 0; index < dscValue.Elem().Len(); index++ {

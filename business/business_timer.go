@@ -53,11 +53,11 @@ func (self *BusinessTimer) RegisterTickTrigger(ms int, fun func(), delay ...int)
 //RegisterDayTrigger 注册每天小时 触发器 hour:0 - 23, minute :0 - 59
 func (self *BusinessTimer) RegisterDayTrigger(hour, minute int, fun func()) {
 	if hour < 0 && hour > 23 {
-		helper.Log().WriteError("BusinessTimer-RegisterDayTrigger Invalid argument hour:0 - 23")
+		helper.Log().Error("BusinessTimer-RegisterDayTrigger Invalid argument hour:0 - 23")
 	}
 
 	if minute < 0 && minute > 59 {
-		helper.Log().WriteError("BusinessTimer-RegisterDayTrigger Invalid argument minute :0 - 59")
+		helper.Log().Error("BusinessTimer-RegisterDayTrigger Invalid argument minute :0 - 59")
 	}
 	self.timerCallBack = append(self.timerCallBack, trigger{t: hour, t2: minute, dayFun: fun})
 	return
@@ -147,7 +147,7 @@ func (self *BusinessTimer) Async(run func(ac AsyncController), completeds ...fun
 // Broadcast 调用所有注册service的method方法. 潜龙勿用,会使项目非常难以维护
 func (self *BusinessTimer) Broadcast(method string, arg interface{}) {
 	if e := _scl.Broadcast(method, arg); e != nil {
-		helper.Log().WriteError("BusinessTimer-Broadcast errror:" + e.Error())
+		helper.Log().Error("BusinessTimer-Broadcast errror:" + e.Error())
 	}
 }
 

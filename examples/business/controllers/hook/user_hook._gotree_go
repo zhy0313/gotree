@@ -42,7 +42,7 @@ func (self *UserHook) Finish(method string, reply interface{}, e error) {
 			//入参和出参数据结对
 			in, _ := self.argv.(business_cmd.UserRegister)
 			out, _ := reply.(*business_value.UserRegister)
-			helper.Log().WriteInfo("hook bi:", self.RpcName(), method, in, out)
+			helper.Log().Notice("hook bi:", self.RpcName(), method, in, out)
 		}
 	}
 

@@ -409,7 +409,7 @@ func (m *methodType) NumCalls() (n uint) {
 func (s *service) call(server *Server, sending *sync.Mutex, mtype *methodType, req *Request, argv, replyv reflect.Value, codec ServerCodec) {
 	defer func() {
 		if perr := recover(); perr != nil {
-			helper.Log().WriteError("panicType:", perr, "rpc argv:", argv.Interface())
+			helper.Log().Error("panicType:", perr, "rpc argv:", argv.Interface())
 			server.sendResponse(sending, req, replyv.Interface(), codec, "panic:"+fmt.Sprint(perr))
 			server.freeRequest(req)
 		}
@@ -426,7 +426,7 @@ func (s *service) call(server *Server, sending *sync.Mutex, mtype *methodType, r
 	//调用构造函数
 	values := t.MethodByName("Gotree").Call(nil)
 	if len(values) < 1 {
-		helper.Log().WriteError("controllers 接口返回构造函数未返回 指针")
+		helper.Log().Error("controllers 接口返回构造函数未返回 指针")
 	}
 	type callip interface {
 		RpcInvoke(net.Conn) bool
@@ -474,7 +474,7 @@ func (s *service) call(server *Server, sending *sync.Mutex, mtype *methodType, r
 	if errInter != nil {
 		errmsg = errInter.(error).Error()
 		if gseq == "" && errmsg != "ServerShutDown" {
-			helper.Log().WriteWarn("控制器:"+newtype.Name(), "方法:"+mtype.method.Name, "错误:"+errmsg)
+			helper.Log().Warning("控制器:"+newtype.Name(), "方法:"+mtype.method.Name, "错误:"+errmsg)
 		}
 	}
 

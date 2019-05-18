@@ -94,7 +94,7 @@ func (self *RpcController) RpcName() string {
 	controller := reflect.TypeOf(child).Elem().String()
 	name := self.controllerName(controller)
 	if name == "" {
-		helper.Log().WriteError("RpcController-RpcName:rpc controller is unnormal:" + controller)
+		helper.Log().Error("RpcController-RpcName:rpc controller is unnormal:" + controller)
 	}
 	return name
 }

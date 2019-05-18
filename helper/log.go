@@ -75,6 +75,10 @@ func (self *log) Init(dir string, bdict bseqInterface) {
 	if Testing() {
 		return
 	}
+	mode := Config().String("sys::Mode")
+	if mode != "prod" {
+		self.debug = true
+	}
 	if !FileExists(logPath) {
 		err := os.Mkdir(logPath, os.ModePerm)
 		if err != nil {
@@ -128,8 +132,8 @@ func (self *log) infoRun() {
 	}
 }
 
-//WriteError 写入错误
-func (self *log) WriteError(str ...interface{}) {
+//Error 写入错误
+func (self *log) Error(str ...interface{}) {
 	stack := string(debug.Stack())
 	str = append(str, "\n"+stack)
 	text := []interface{}{}
@@ -150,15 +154,8 @@ func (self *log) WriteError(str ...interface{}) {
 	self.write(_LOG_ERROR, datetime+" "+fmt.Sprint(text))
 }
 
-func (self *log) WriteDaemonError(str ...interface{}) {
-	text := []interface{}{}
-	datetime := self.nowDateTime()
-	text = append(text, str...)
-	self.write(_LOG_ERROR, datetime+" "+fmt.Sprint(text))
-}
-
-//WriteError 写入警告
-func (self *log) WriteWarn(str ...interface{}) {
+//Error 写入警告
+func (self *log) Warning(str ...interface{}) {
 	text := []interface{}{}
 	if no := self.BseqNo(); no != "" {
 		text = append(text, "gseq:"+no)
@@ -176,8 +173,8 @@ func (self *log) WriteWarn(str ...interface{}) {
 	self.warnMsg <- datetime + " " + fmt.Sprint(text)
 }
 
-//WriteInfo 写入普通
-func (self *log) WriteInfo(str ...interface{}) {
+//Notice 写入普通
+func (self *log) Notice(str ...interface{}) {
 	text := []interface{}{}
 	if no := self.BseqNo(); no != "" {
 		text = append(text, "gseq:"+no)
@@ -195,12 +192,12 @@ func (self *log) WriteInfo(str ...interface{}) {
 	self.infoMsg <- datetime + " " + fmt.Sprint(text)
 }
 
-//WriteDebug 等同WriteInfo,只在dev模式下生效
-func (self *log) WriteDebug(str ...interface{}) {
+//Debug 等同WriteInfo,只在dev模式下生效
+func (self *log) Debug(str ...interface{}) {
 	if !self.debug {
 		return
 	}
-	self.WriteInfo(str...)
+	self.Notice(str...)
 }
 
 //Write 写入日志
@@ -212,10 +209,6 @@ func (self *log) write(logType int, str string) {
 
 	buf := []byte(str)
 	wt.Write(append(buf, '\n'))
-}
-
-func (self *log) Debug() {
-	self.debug = true
 }
 
 //Close 关闭日志

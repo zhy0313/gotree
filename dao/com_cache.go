@@ -82,14 +82,14 @@ func (self *ComCache) redisOn() {
 	}
 	redisinfo := helper.Config().String("redis::" + self.comName)
 	if redisinfo == "" {
-		helper.Log().WriteError("ComCache-redisOn-redisinfo Config file dao:" + self.comName + " redis address error or not found")
+		helper.Log().Error("ComCache-redisOn-redisinfo Config file dao:" + self.comName + " redis address error or not found")
 	}
 	list := strings.Split(redisinfo, ";")
 	m := map[string]string{}
 	for _, item := range list {
 		kv := strings.Split(item, "=")
 		if len(kv) != 2 {
-			helper.Log().WriteError("ComCache-redisOn-kv Config file dao:" + self.comName + " redis address error or not found")
+			helper.Log().Error("ComCache-redisOn-kv Config file dao:" + self.comName + " redis address error or not found")
 			continue
 		}
 		m[kv[0]] = kv[1]
@@ -116,7 +116,7 @@ func (self *ComCache) redisOn() {
 	}
 
 	db, _ := strconv.Atoi(m["database"])
-	helper.Log().WriteInfo("ComCache-redisOn Connect com: " + self.comName + " MaxIdleConns:" + maxIdleConns + " MaxOpenConns:" + maxOpenConns + " config:" + fmt.Sprint(m))
+	helper.Log().Notice("ComCache-redisOn Connect com: " + self.comName + " MaxIdleConns:" + maxIdleConns + " MaxOpenConns:" + maxOpenConns + " config:" + fmt.Sprint(m))
 	client, e := redis.NewCache(m["server"], m["password"], db, imaxIdleConns, imaxOpenConns)
 	if e != nil {
 		helper.Exit(e.Error())

@@ -26,12 +26,12 @@ func (self *UserController) Gotree() *UserController {
 
 // Prepare
 func (self *UserController) Prepare(method string, argv interface{}) {
-	helper.Log().WriteInfo("Prepare:", method, argv)
+	helper.Log().Notice("Prepare:", method, argv)
 }
 
 //Finish
 func (self *UserController) Finish(method string, reply interface{}, e error) {
-	helper.Log().WriteInfo("Finish:", method, fmt.Sprint(reply), e)
+	helper.Log().Notice("Finish:", method, fmt.Sprint(reply), e)
 }
 
 // Add
@@ -70,7 +70,7 @@ func (self *UserController) Get(cmd dao_cmd.UserGet, result *dao_value.UserGet) 
 	if e != nil {
 		return
 	}
-	helper.Log().WriteInfo("mUser.Get:", u)
+	helper.Log().Notice("mUser.Get:", u)
 
 	result.Id = u.Id
 	result.Money = u.Money

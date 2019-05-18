@@ -43,7 +43,7 @@ type updateComponent interface {
 func (self *Components) AddComponent(obj interface{}) {
 	t := reflect.TypeOf(obj)
 	if t.Kind() != reflect.Ptr {
-		helper.Log().WriteError("AddComponent != reflect.Ptr")
+		helper.Log().Error("AddComponent != reflect.Ptr")
 	}
 	self.dict.Set(t.Elem().Name(), obj)
 	if app, ok := obj.(updateComponent); ok {

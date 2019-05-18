@@ -60,7 +60,7 @@ func (self *BusinessController) Service(child interface{}) {
 // ServiceBroadcast 调用所有注册service的method方法. 潜龙勿用,会使项目非常难以维护
 func (self *BusinessController) ServiceBroadcast(method string, arg interface{}) {
 	if e := _scl.Broadcast(method, arg); e != nil {
-		helper.Log().WriteError("BusinessController-ServiceBroadcast error:" + e.Error())
+		helper.Log().Error("BusinessController-ServiceBroadcast error:" + e.Error())
 	}
 }
 

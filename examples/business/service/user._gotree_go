@@ -26,7 +26,7 @@ func (self *User) Gotree() *User {
 // Register 注册
 func (self *User) Register(userName string) (userId int64, e error) {
 	//读取cmd头
-	helper.Log().WriteInfo("UserService.test_head:", self.ReqHeader("test_head"))
+	helper.Log().Notice("UserService.test_head:", self.ReqHeader("test_head"))
 	cmdAdd := new(dao_cmd.UserAdd).Gotree(userName, 10000000)
 	user := dao_value.UserAdd{}
 	e = self.CallDao(cmdAdd, &user)

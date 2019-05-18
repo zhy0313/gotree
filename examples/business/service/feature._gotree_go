@@ -26,7 +26,7 @@ func (self *Feature) Gotree() *Feature {
 func (self *Feature) Course() {
 	cmd := new(dao_cmd.Course).Gotree("ServiceFeature", 666)
 	if err := self.CallDao(cmd, &helper.VoidValue{}); err != nil {
-		helper.Log().WriteWarn(err)
+		helper.Log().Warning(err)
 	}
 }
 
@@ -74,17 +74,17 @@ func (self *Feature) Simple() (result []struct {
 	group.Add(func() error {
 		//配置文件读取
 		mode := helper.Config().String("sys::Mode")
-		helper.Log().WriteInfo("WriteInfo", mode)
+		helper.Log().Notice("Notice", mode)
 		return nil
 	})
 	group.Add(func() error {
 		//配置文件读取
 		len := helper.Config().DefaultInt("sys::LogWarnQueueLen", 512)
-		helper.Log().WriteWarn("WriteWarn", len)
+		helper.Log().Warning("Warning", len)
 		return nil
 	})
 	group.Add(func() error {
-		helper.Log().WriteDebug("WriteDebug")
+		helper.Log().Debug("Debug")
 		return nil
 	})
 

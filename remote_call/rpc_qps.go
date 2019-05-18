@@ -55,7 +55,7 @@ func (self *RpcQps) Qps(serviceMethod string, ms int64) {
 	defer self.mutex.Unlock()
 	self.mutex.Lock()
 	if ms < 0 {
-		helper.Log().WriteError("RpcQps ms < 0 ServiceMethod:", serviceMethod)
+		helper.Log().Error("RpcQps ms < 0 ServiceMethod:", serviceMethod)
 		return
 	}
 
@@ -103,7 +103,7 @@ func (self *RpcQps) tick(stop *bool) {
 	if len(list) > 0 {
 		data, e := json.Marshal(list)
 		if e == nil {
-			helper.Log().WriteInfo("business qps", string(data))
+			helper.Log().Notice("business qps", string(data))
 		}
 	}
 

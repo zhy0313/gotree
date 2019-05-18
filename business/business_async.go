@@ -102,7 +102,7 @@ func (self *async) execute() {
 	atomic.AddInt32(&asyncNum, 1)
 	defer func() {
 		if perr := recover(); perr != nil {
-			helper.Log().WriteError(perr)
+			helper.Log().Error(perr)
 		}
 		atomic.AddInt32(&asyncNum, -1)
 		if self.gseq != "" {

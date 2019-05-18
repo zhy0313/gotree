@@ -50,7 +50,7 @@ func _NewGotreeRequest(rawurl, method string) *HTTPRequest {
 	var resp http.Response
 	u, err := url.Parse(rawurl)
 	if err != nil {
-		Log().WriteWarn("Httplib:", err)
+		Log().Warning("Httplib:", err)
 	}
 	req := http.Request{
 		URL:        u,
@@ -321,17 +321,17 @@ func (b *HTTPRequest) buildURL(paramBody string) {
 				for formname, filename := range b.files {
 					fileWriter, err := bodyWriter.CreateFormFile(formname, filename)
 					if err != nil {
-						Log().WriteWarn("Httplib:", err)
+						Log().Warning("Httplib:", err)
 					}
 					fh, err := os.Open(filename)
 					if err != nil {
-						Log().WriteWarn("Httplib:", err)
+						Log().Warning("Httplib:", err)
 					}
 					//iocopy
 					_, err = io.Copy(fileWriter, fh)
 					fh.Close()
 					if err != nil {
-						Log().WriteWarn("Httplib:", err)
+						Log().Warning("Httplib:", err)
 					}
 				}
 				for k, v := range b.params {
@@ -441,7 +441,7 @@ func (b *HTTPRequest) DoRequest() (resp *http.Response, err error) {
 	if b.setting.ShowDebug {
 		dump, err := httputil.DumpRequest(b.req, b.setting.DumpBody)
 		if err != nil {
-			Log().WriteWarn(err.Error())
+			Log().Warning(err.Error())
 		}
 		b.dump = dump
 	}

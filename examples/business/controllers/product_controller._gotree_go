@@ -27,13 +27,13 @@ func (self *ProductController) Gotree() *ProductController {
 //Prepare
 func (self *ProductController) Prepare(method string, argv interface{}) {
 	self.BusinessController.Prepare(method, argv)
-	helper.Log().WriteInfo("Prepare:", method, argv)
+	helper.Log().Notice("Prepare:", method, argv)
 }
 
 //Finish
 func (self *ProductController) Finish(method string, reply interface{}, e error) {
 	self.BusinessController.Finish(method, reply, e)
-	helper.Log().WriteInfo("Finish:", method, fmt.Sprint(reply), e)
+	helper.Log().Notice("Finish:", method, fmt.Sprint(reply), e)
 }
 
 // Store 商品列表
@@ -47,7 +47,7 @@ func (self *ProductController) Store(cmd business_cmd.Store, result *business_va
 	result.List, e = productSer.Store()
 
 	//self.RemoteAddr() 远程rpc ip地址
-	helper.Log().WriteInfo("gateway ip:", self.RemoteAddr())
+	helper.Log().Notice("gateway ip:", self.RemoteAddr())
 	return
 }
 

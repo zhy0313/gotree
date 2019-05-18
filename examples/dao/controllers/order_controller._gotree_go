@@ -26,12 +26,12 @@ func (self *OrderController) Gotree() *OrderController {
 
 //Prepare
 func (self *OrderController) Prepare(method string, argv interface{}) {
-	helper.Log().WriteInfo("Prepare:", method, argv)
+	helper.Log().Notice("Prepare:", method, argv)
 }
 
 //Finish
 func (self *OrderController) Finish(method string, reply interface{}, e error) {
-	helper.Log().WriteInfo("Finish:", method, fmt.Sprint(reply), e)
+	helper.Log().Notice("Finish:", method, fmt.Sprint(reply), e)
 }
 
 // Add 下单

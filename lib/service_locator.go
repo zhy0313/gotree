@@ -41,7 +41,7 @@ func (self *ServiceLocator) CheckService(com interface{}) bool {
 func (self *ServiceLocator) AddService(obj interface{}) {
 	t := reflect.TypeOf(obj)
 	if t.Kind() != reflect.Ptr {
-		helper.Log().WriteError("AddComponent != reflect.Ptr")
+		helper.Log().Error("AddComponent != reflect.Ptr")
 	}
 	self.dict.Set(t.Elem().Name(), obj)
 }

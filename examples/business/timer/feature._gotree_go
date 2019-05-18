@@ -40,7 +40,7 @@ func (self *Feature) CourseTick() {
 	var (
 		featureSer *service.Feature
 	)
-	helper.Log().WriteWarn("CourseTick")
+	helper.Log().Warning("CourseTick")
 	self.Service(&featureSer)
 
 	self.Async(func(ac business.AsyncController) {
@@ -55,9 +55,9 @@ func (self *Feature) CourseDay() {
 		featureSer *service.Feature
 	)
 	self.Service(&featureSer)
-	helper.Log().WriteInfo("CourseDay")
+	helper.Log().Notice("CourseDay")
 
 	//必看!!!!! Feature.Simple !!!
 	simpleData, err := featureSer.Simple()
-	helper.Log().WriteDebug(simpleData, err)
+	helper.Log().Debug(simpleData, err)
 }

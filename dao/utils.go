@@ -33,7 +33,7 @@ func telnet() {
 	_msl.NotitySubscribe("DaoTelnet", daos()...)
 	baddrs := helper.Config().String("dispersed::BusinessAddrs")
 	if baddrs == "" {
-		helper.Log().WriteWarn("telnet-BusinessAddrs baddrs address is empty.")
+		helper.Log().Warning("telnet-BusinessAddrs baddrs address is empty.")
 		time.Sleep(500 * time.Millisecond)
 		os.Exit(0)
 	}
@@ -42,7 +42,7 @@ func telnet() {
 	for _, item := range list {
 		_, err := net.DialTimeout("tcp", item, time.Duration(2*time.Second))
 		if err != nil {
-			helper.Log().WriteWarn("telnet-BusinessAddrs connection failed", item)
+			helper.Log().Warning("telnet-BusinessAddrs connection failed", item)
 			time.Sleep(500 * time.Millisecond)
 			os.Exit(0)
 		}

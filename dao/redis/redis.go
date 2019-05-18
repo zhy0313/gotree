@@ -129,7 +129,7 @@ func (rc *Cache) getRc() redis.Conn {
 // actually do the redis cmds
 func (rc *Cache) do(commandName string, args ...interface{}) (reply interface{}, err error) {
 	if strings.ToLower(commandName) == "select" {
-		helper.Log().WriteError("Forbid switching of database in operation")
+		helper.Log().Error("Forbid switching of database in operation")
 	}
 
 	c := rc.getRc()
