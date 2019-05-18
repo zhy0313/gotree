@@ -700,7 +700,7 @@ $ go run main.go
         代码目录  learning/business/unit
         测试service对象，请在本机开启dao 进程。 TestOn : "Com组件名字:id"
         TestOn 函数内部有引用框架，初始化、建立连接等。填写Com 即可使用。
-        执行命令 go test -v -run TestProduct $GOPATH/src/examples/business/unit/service_test.go
+        执行命令 go test -v -run TestProduct $GOPATH/src/learning/business/unit/service_test.go
     */
     func TestProduct(t *testing.T) {
         service := new(service.Product).Gotree()
@@ -715,7 +715,7 @@ $ go run main.go
         dao 单元测试
         代码目录  learning/dao/unit
         TestOn 函数内部有引用框架，初始化、建立 redis、mysql 连接等。
-        执行命令 go test -v -run TestFeature $GOPATH/src/examples/dao/unit/feature_test.go
+        执行命令 go test -v -run TestFeature $GOPATH/src/learning/dao/unit/feature_test.go
     */
     func TestFeature(t *testing.T) {
         // 四种数据源对象的单元测试
