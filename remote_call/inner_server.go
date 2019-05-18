@@ -122,7 +122,7 @@ func (self *InnerServerController) DaoServerInfo(arg interface{}, ret *string) e
 			continue
 		}
 
-		*ret += fmt.Sprintf("dao服务地址:%s, 使用内存:%smb, GCCPU占用:%s, GC次数:%s, 请求:%s, 数据库连接:%s, 日志队列:%s, 异步队列:%s, 启动时间:%s", addr, list[0], list[1], list[2], list[3], list[5], list[6], list[7], list[4])
+		*ret += fmt.Sprintf("Dao Service address:%s, Memory usage ratio:%smb, GCCPU usage ratio:%s, GC times:%s, Request url:%s, Connect to the database:%s, Log queue:%s, Async queue:%s, Start Time:%s", addr, list[0], list[1], list[2], list[3], list[5], list[6], list[7], list[4])
 	}
 	return nil
 }
@@ -141,7 +141,7 @@ func (self *InnerServerController) BusinessInfo(arg interface{}, ret *string) er
 		return nil
 	}
 
-	*ret = fmt.Sprintf("使用内存:%smb, GCCPU占用:%s, GC次数:%s, 请求:%d, 定时:%d, 异步:%d, 日志队列:%s, 启动时间:%s", list[0], list[1], list[2], rpc.CurrentCallNum(), lib.CurrentTimeNum(), AsynNumFunc(), list[6], startTime)
+	*ret = fmt.Sprintf("Memory usage ratio:%smb, GCCPU usage ratio:%s, GC times:%s, Request url:%d, Timing:%d, Async queue:%d, Log queue:%s, Start Time:%s", list[0], list[1], list[2], rpc.CurrentCallNum(), lib.CurrentTimeNum(), AsynNumFunc(), list[6], startTime)
 	return nil
 }
 

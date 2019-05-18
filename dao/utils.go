@@ -31,9 +31,9 @@ func telnet() {
 	}
 	helper.Log().Debug()
 	_msl.NotitySubscribe("DaoTelnet", daos()...)
-	baddrs := helper.Config().String("BusinessAddrs")
+	baddrs := helper.Config().String("dispersed::BusinessAddrs")
 	if baddrs == "" {
-		helper.Log().WriteWarn("BusinessAddrs地址为空")
+		helper.Log().WriteWarn("telnet-BusinessAddrs baddrs address is empty.")
 		time.Sleep(500 * time.Millisecond)
 		os.Exit(0)
 	}
@@ -42,7 +42,7 @@ func telnet() {
 	for _, item := range list {
 		_, err := net.DialTimeout("tcp", item, time.Duration(2*time.Second))
 		if err != nil {
-			helper.Log().WriteWarn("BusinessAddrs连接失败", item)
+			helper.Log().WriteWarn("telnet-BusinessAddrs connection failed", item)
 			time.Sleep(500 * time.Millisecond)
 			os.Exit(0)
 		}
@@ -51,7 +51,7 @@ func telnet() {
 }
 
 func appStart() {
-	addr := helper.Config().String("BindAddr")
+	addr := helper.Config().String("dispersed::BindAddr")
 	if addr == "" {
 		panic("undefined BindAddr")
 	}

@@ -33,7 +33,7 @@ func init() {
 func Do(name, cmd string, to ...interface{}) (reply interface{}, err error) { //, to interface{}
 	rc := GetClient(name)
 	if rc == nil {
-		return nil, errors.New("Redis 连接无效")
+		return nil, errors.New("Redis-Do Invalid connection")
 	}
 
 	reply, err = rc.do(cmd, to...)
@@ -129,7 +129,7 @@ func (rc *Cache) getRc() redis.Conn {
 // actually do the redis cmds
 func (rc *Cache) do(commandName string, args ...interface{}) (reply interface{}, err error) {
 	if strings.ToLower(commandName) == "select" {
-		helper.Log().WriteError("运行中不可以切库")
+		helper.Log().WriteError("Forbid switching of database in operation")
 	}
 
 	c := rc.getRc()

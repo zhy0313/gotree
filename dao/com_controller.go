@@ -45,12 +45,12 @@ func (self *ComController) Gotree(child interface{}) *ComController {
 func (self *ComController) Model(child interface{}) {
 	modelDao := reflect.ValueOf(child).Elem().Interface().(comName).Com()
 	if self.selfName != modelDao {
-		helper.Exit("model 不在一个 com 下,不要乱调用")
+		helper.Exit("ComController-Model-modelDao Not in the same com, prohibit invoking")
 	}
 
 	err := _msl.Service(child)
 	if err != nil {
-		helper.Exit("禁止调用 " + err.Error())
+		helper.Exit("ComController-Model-Service Prohibit invoking " + err.Error())
 	}
 	return
 }
@@ -59,12 +59,12 @@ func (self *ComController) Model(child interface{}) {
 func (self *ComController) Cache(child interface{}) {
 	cacheDao := reflect.ValueOf(child).Elem().Interface().(comName).Com()
 	if self.selfName != cacheDao {
-		helper.Exit("cachae 不在一个 com 下,不要乱调用")
+		helper.Exit("ComController-Cache-cacheDao Not in the same com, prohibit invoking")
 	}
 
 	err := _csl.Service(child)
 	if err != nil {
-		helper.Exit("禁止调用 " + err.Error())
+		helper.Exit("ComController-Cache-Service Prohibit invoking " + err.Error())
 	}
 	return
 }
@@ -73,7 +73,7 @@ func (self *ComController) Cache(child interface{}) {
 func (self *ComController) Api(child interface{}) {
 	err := _api.Service(child)
 	if err != nil {
-		helper.Exit("禁止调用 " + err.Error())
+		helper.Exit("ComController-Api-Service Prohibit invoking " + err.Error())
 	}
 	return
 }
@@ -82,12 +82,12 @@ func (self *ComController) Api(child interface{}) {
 func (self *ComController) Memory(child interface{}) {
 	apiDao := reflect.ValueOf(child).Elem().Interface().(comName).Com()
 	if self.selfName != apiDao {
-		helper.Exit("memory 不在一个 com 下,不要乱调用")
+		helper.Exit("ComController-Memory-apiDao Not in the same com, prohibit invoking")
 	}
 
 	err := _esl.Service(child)
 	if err != nil {
-		helper.Exit("禁止调用 " + err.Error())
+		helper.Exit("ComController-Memory-Service Prohibit invoking" + err.Error())
 	}
 	return
 }
@@ -101,7 +101,7 @@ func (self *ComController) Transaction(fun func() error) error {
 func (self *ComController) Queue(name string, fun func() error) {
 	q, ok := queueMap[self.selfName+"_"+name]
 	if !ok {
-		helper.Exit("未注册队列:" + self.selfName + "." + name)
+		helper.Exit("ComController-Queue Unregistered queue:" + self.selfName + "." + name)
 	}
 	q.cast(fun)
 }

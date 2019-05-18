@@ -141,7 +141,7 @@ func (self *RpcClient) Call(obj interface{}, reply interface{}) (err error) {
 		}
 
 		callDone := jrc.client.Go(cmd.ServiceMethod(), cmd, reply, make(chan *rpc.Call, 1)).Done
-		e = errors.New("超时请求")
+		e = errors.New("RpcClient-Call Request timed out")
 		timeoutCall = true
 		for index := 0; index < self.sleepCount; index++ {
 			select {
@@ -221,9 +221,9 @@ func (self *RpcClient) releaseJsonCall(client *rpcConn, err error) {
 }
 
 func (self *RpcClient) Close() {
-	helper.Log().WriteInfo(" business close: 关闭dao连接池...")
+	helper.Log().WriteInfo(" business close: Close the dao connection pool...")
 	connPool.Close()
-	helper.Log().WriteInfo(" business close: dao连接池已关闭")
+	helper.Log().WriteInfo(" business close: Dao connection pool is closed")
 	return
 }
 
@@ -232,7 +232,7 @@ func (self *RpcClient) qps(serviceMethod string, ms int64) {
 		self.GetComponent(&self.rpcQps)
 	}
 	if self.rpcQps == nil {
-		panic("未获取到rpcQps")
+		panic("RpcQps not obtained")
 	}
 	go func() {
 		self.rpcQps.Qps(serviceMethod, ms)
@@ -243,4 +243,4 @@ var ErrShutdown = errors.New("connection is shut down")
 var ErrConnect = errors.New("dial is fail")
 var ErrNetwork = errors.New("connection is shut down")
 var Unexpected = errors.New("unexpected EOF")
-var unknownNetwork = errors.New("未知网络错误")
+var unknownNetwork = errors.New("Unknown network error")

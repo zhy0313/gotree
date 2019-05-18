@@ -1,5 +1,5 @@
 # gotree
-
+<img align="right" width="230px" src="https://raw.githubusercontent.com/8treenet/blog/master/img/4_Grayscale_logo_on_transparent_1024.png">
 gotree 是一个垂直分布式框架。 gotree 的目标是轻松开发分布式服务，解放开发者心智负担。
 
 ## 特性
@@ -33,6 +33,8 @@ gotree 是一个垂直分布式框架。 gotree 的目标是轻松开发分布�
 - [Helper](#helper)
 - [配置文件](#helper)
 - [单元测试](#unit)
+- [命令](#command)
+- [分布实例](#dispersed)
 
 
 ## 快速使用
@@ -65,6 +67,7 @@ $ vi $GOPATH/src/learning/dao/conf/dev/db.conf
 ```sh
 $ cd $GOPATH/src/learning/dao
 $ go run main.go
+$ command + t #开启新窗口
 $ cd $GOPATH/src/learning/business
 $ go run main.go
 ```
@@ -735,4 +738,52 @@ $ go run main.go
         t.Log(memory.TestGet())
         t.Log(model.Gets([]int64{1, 2, 3, 4}))
     }
+```
+
+### command
+###### ./dao telnet        该命令尝试连接数据库、redis。用来检验防火墙和密码。 
+###### ./dao start         该命令会以督程的方式启动 dao。
+###### ./dao stop          该命令以优雅关闭的方式停止 dao, 会等待 dao 执行完当前未完成的请求。
+###### ./dao restart       该命令以热更新的方式重启 dao。
+###### ./business start    该命令会以督程的方式启动 business。
+###### ./business stop     该命令以优雅关闭的方式停止 business, 会等待 business 执行完当前未完成的请求。
+###### ./business restart  该命令以热更新的方式重启 business。
+###### ./business qps      该命令查看当前 business 调用 dao 的 qps 信息， -t 实时刷新。
+###### ./business status   该命令查看当前 business 状态信息
+```sh
+    $ cd $GOPATH/src/learning/dao
+    $ go build
+    $ ./dao start
+    $ cd $GOPATH/src/learning/business
+    $ go build
+    $ ./business start
+    
+    #执行一个单元测试
+    $ go test -v -count=1 -run TestUserRegister $GOPATH/src/learning/business/unit/gateway_test.go
+    
+    #查看qps，实时加 -t ./business qps -t
+    $ ./business qps
+    
+    #查看状态
+    $ ./business status
+
+    #关闭
+    $ ./business stop
+    $ cd $GOPATH/src/learning/dao
+    $ ./dao stop
+```
+
+### dispersed
+```sh
+    $ cd $GOPATH/src/learning/dao
+    $ go build
+    $ vi $GOPATH/src/learning/dao/conf/dispersed.conf
+    # 修改为 BusinessAddrs = "127.0.0.1:8888,127.0.0.1:18888"
+    $ ./dao start #启动 dao 实例1
+
+    # dao 实例 2 配置
+    $ vi $GOPATH/src/learning/dao/conf/dispersed.conf
+    # 修改为
+    # BindAddr = "127.0.0.1:16666"
+
 ```

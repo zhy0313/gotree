@@ -61,7 +61,7 @@ func (self *RpcCmd) Header(k string) string {
 func (self *RpcCmd) SetHeader(k string, v string) {
 	_, e := self.GetChild(self)
 	if e != nil {
-		panic("RpcCmd :header是只读数据")
+		panic("RpcCmd-SetHeader :Header is read-only data")
 	}
 	self.Head = _header.Set(self.Head, k, v)
 }
@@ -69,7 +69,7 @@ func (self *RpcCmd) SetHeader(k string, v string) {
 func (self *RpcCmd) SetHttpHeader(head http.Header) {
 	_, e := self.GetChild(self)
 	if e != nil {
-		panic("RpcCmd :header是只读数据")
+		panic("RpcCmd-SetHttpHeader :Header is read-only data")
 	}
 	for item := range head {
 		self.SetHeader(item, head.Get(item))
@@ -77,12 +77,12 @@ func (self *RpcCmd) SetHttpHeader(head http.Header) {
 }
 
 type ComNode interface {
-	RandomAddr() string                    //随机地址
-	BalanceAddr() string                   //负载均衡地址
+	RandomAddr() string                       //随机地址
+	BalanceAddr() string                      //负载均衡地址
 	HostHashRpcAddr(value interface{}) string //热一致性哈希地址
 	HashRpcAddr(value interface{}) string     //一致性哈希地址
-	SlaveAddr() string                     //返回随机从节点  主节点:节点id=1,当只有主节点返回主节点
-	MasterAddr() string                    //返回主节点
+	SlaveAddr() string                        //返回随机从节点  主节点:节点id=1,当只有主节点返回主节点
+	MasterAddr() string                       //返回主节点
 	AllNode() (list []*NodeInfo)              //获取全部节点,自定义分发
 }
 
@@ -136,7 +136,7 @@ func (self *RpcCmd) RemoteAddr(naddr interface{}) (string, error) {
 	childObj, ok := child.(cmdChild)
 	if !ok {
 		className := self.ClassName(child)
-		panic("顶级子类未实现 interface :" + className)
+		panic("RpcCmd-RemoteAddr:Subclass is not implemented,interface :" + className)
 	}
 
 	//获取子类要调用的服务名
@@ -158,7 +158,7 @@ func (self *RpcCmd) ServiceMethod() string {
 	childObj, ok := child.(cmdSerChild)
 	if !ok {
 		className := self.ClassName(child)
-		panic("顶级子类未实现 interface :" + className)
+		panic("RpcCmd-ServiceMethod:Subclass is not implemented, interface :" + className)
 	}
 
 	return childObj.Control() + "." + childObj.Action()

@@ -87,7 +87,7 @@ func RpcServerRegister(controller interface{}) {
 
 	rc, ok := controller.(rpcname)
 	if !ok {
-		helper.Log().WriteError("RpcServerRegister 注册失败:" + reflect.TypeOf(controller).String())
+		helper.Log().WriteError("RpcServerRegister:registration failed:" + reflect.TypeOf(controller).String())
 	}
 	rs.register(rc.RpcName(), controller)
 }

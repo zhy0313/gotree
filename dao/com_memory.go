@@ -47,11 +47,11 @@ func (self *ComMemory) Gotree(child interface{}) *ComMemory {
 func (self *ComMemory) TestOn() {
 	mode := helper.Config().String("sys::Mode")
 	if mode == "prod" {
-		helper.Exit("生产环境不可以使用单元测试model")
+		helper.Exit("ComMemory-TestOn-mode Unit test model is not available in production environments")
 	}
 	self.DaoInit()
 	if helper.Config().DefaultString("com_on::"+self.comName, "") == "" {
-		helper.Exit("未找到 com.conf com_on 域下的组件 " + self.comName)
+		helper.Exit("ComMemory-TestOn Component not found com.conf com_on " + self.comName)
 	}
 	self.open = true
 }

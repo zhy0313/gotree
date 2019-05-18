@@ -73,10 +73,10 @@ type Conn interface {
 //Orm 获取orm
 func (self *ComModel) Conn() Conn {
 	if !self.open {
-		helper.Exit("model error: 未开启com:" + self.comName)
+		helper.Exit("ComModel-Conn open model error: Not opened com:" + self.comName)
 	}
 	if self.comName == "" {
-		helper.Exit("这是一个未注册的com")
+		helper.Exit("ComModel-Conn This is an unregistered com")
 		return nil
 	}
 	o := orm.New(self.comName)
@@ -92,12 +92,12 @@ func (self *ComModel) Conn() Conn {
 func (self *ComModel) TestOn() {
 	mode := helper.Config().String("sys::Mode")
 	if mode == "prod" {
-		helper.Exit("生产环境不可以使用单元测试model")
+		helper.Exit("ComModel-TestOn Unit test model is not available in production environments")
 	}
 	rpc.GoDict().Set("gseq", "ModelUnit")
 	self.DaoInit()
 	if helper.Config().DefaultString("com_on::"+self.comName, "") == "" {
-		helper.Exit("未找到 com.conf com_on 域下的组件 " + self.comName)
+		helper.Exit("ComModel-TestOn Component not found com.conf com_on " + self.comName)
 	}
 	self.ormOn()
 }
@@ -146,7 +146,7 @@ func (self *ComModel) ormOn() {
 	}
 
 	if dbconfig == "" {
-		helper.Exit(self.comName + ":数据库配置信息不存在")
+		helper.Exit("ComModel-ormOn " + self.comName + ":No database configuration information exists")
 	}
 	_, err := orm.GetDB(self.comName)
 	if err == nil {
@@ -162,12 +162,12 @@ func (self *ComModel) ormOn() {
 	maxIdleConns, ei := strconv.Atoi(dbMaxIdleConns)
 	maxOpenConns, eo := strconv.Atoi(dbMaxOpenConns)
 	if ei != nil || eo != nil || maxIdleConns == 0 || maxOpenConns == 0 || maxIdleConns > maxOpenConns {
-		helper.Exit("连接 " + self.comName + " db 失败, MaxIdleConns 或 MaxOpenConns 参数错误")
+		helper.Exit("ComModel-ormOn Failure to connect " + self.comName + " db, MaxIdleConns or MaxOpenConns are invalid arguments")
 	}
-	helper.Log().WriteInfo("connect com " + self.comName + " database, MaxIdleConns:" + dbMaxIdleConns + ", MaxOpenConns:" + dbMaxOpenConns + ", config:" + dbconfig)
+	helper.Log().WriteInfo("ComModel-ormOn Connect com " + self.comName + " database, MaxIdleConns:" + dbMaxIdleConns + ", MaxOpenConns:" + dbMaxOpenConns + ", config:" + dbconfig)
 	err = orm.RegisterDataBase(self.comName, driver, dbconfig, maxIdleConns, maxOpenConns)
 	if err != nil {
-		helper.Exit("连接 " + self.comName + " 失败," + err.Error())
+		helper.Exit("ComModel-ormOn-RegisterDataBase Connect " + self.comName + " error:," + err.Error())
 	}
 }
 

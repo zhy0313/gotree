@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-//go test -v -count=1 -run TestUserModel $GOPATH/src/examples/dao/unit/learn_test.go
+//go test -v -count=1 -run TestUserModel $GOPATH/src/learning/dao/unit/learn_test.go
 func TestUserModel(t *testing.T) {
 	object := new(user.User).Gotree()
 	//开启单元测试

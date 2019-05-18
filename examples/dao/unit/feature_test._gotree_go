@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-//go test -v -count=1 -run TestCache $GOPATH/src/examples/dao/unit/feature_test.go
+//go test -v -count=1 -run TestCache $GOPATH/src/learning/dao/unit/feature_test.go
 func TestCache(t *testing.T) {
 	c := new(cache.Course).Gotree()
 	c.TestOn()

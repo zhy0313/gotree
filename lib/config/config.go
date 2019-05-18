@@ -408,7 +408,7 @@ func (c *IniConfigContainer) Set(key, value string) error {
 	c.Lock()
 	defer c.Unlock()
 	if len(key) == 0 {
-		return errors.New("key is empty")
+		return errors.New("The key is empty")
 	}
 
 	var (
@@ -436,7 +436,7 @@ func (c *IniConfigContainer) DIY(key string) (v interface{}, err error) {
 	if v, ok := c.data[strings.ToLower(key)]; ok {
 		return v, nil
 	}
-	return v, errors.New("key not find")
+	return v, errors.New("Not found the key")
 }
 
 // section.key or key

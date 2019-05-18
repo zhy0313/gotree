@@ -38,8 +38,9 @@ func (self *BusinessService) Gotree(child interface{}) *BusinessService {
 }
 
 func (self *BusinessService) CallDao(obj interface{}, reply interface{}) error {
+	//禁止重复实例化
 	if !self._openService {
-		helper.Exit("禁止重复实例化后调用")
+		helper.Exit("BusinessService-CallDao Prohibit duplicate instantiation")
 	}
 	var client *remote_call.RpcClient
 	if e := _ssl.GetComponent(&client); e != nil {
@@ -63,8 +64,9 @@ func (self *BusinessService) ReqHeader(k string) string {
 
 func (self *BusinessService) TestOn(testDaos ...string) {
 	mode := helper.Config().String("sys::Mode")
+	//生产环境不可进行单元测试
 	if mode == "prod" {
-		helper.Log().WriteError("生产环境不可以使用单元测试service")
+		helper.Log().WriteError("BusinessService-TestOn Unit test service is not available in production environments")
 		os.Exit(-1)
 	}
 	rpc.GoDict().Set("gseq", "ServiceUnit")
@@ -84,7 +86,7 @@ func (self *BusinessService) TestOn(testDaos ...string) {
 func (self *BusinessService) OpenService() {
 	exist := _scl.CheckService(self.TopChild())
 	if exist {
-		helper.Exit("禁止重复实例化后调用")
+		helper.Exit("BusinessService-OpenService Prohibit duplicate instantiation")
 	}
 	self._openService = true
 	return
