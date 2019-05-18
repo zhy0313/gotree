@@ -22,9 +22,6 @@ import (
 	"github.com/8treenet/gotree/lib"
 	"github.com/8treenet/gotree/lib/chart"
 
-	// SQL Server 数据库支持
-	_ "github.com/denisenkom/go-mssqldb"
-	// MySQL 数据库支持
 	"reflect"
 	"strconv"
 	"strings"
