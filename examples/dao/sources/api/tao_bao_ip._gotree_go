@@ -6,13 +6,13 @@ import (
 	"github.com/8treenet/gotree/dao"
 )
 
+func init() {
+	dao.RegisterApi(new(TaoBaoIp).Gotree())
+}
+
 // TaoBaoIp
 type TaoBaoIp struct {
 	dao.ComApi
-}
-
-func init() {
-	dao.RegisterApi(new(TaoBaoIp).Gotree())
 }
 
 //Gotree
@@ -21,13 +21,13 @@ func (self *TaoBaoIp) Gotree() *TaoBaoIp {
 	return self
 }
 
-// Dao
+// 绑定配置文件[api]域下的host地址
 func (self *TaoBaoIp) Api() string {
 	return "TaoBaoIp"
 }
 
 // Country
-func (self *TaoBaoIp) Country(ip string) (country string, err error) {
+func (self *TaoBaoIp) GetIpInfo(ip string) (country string, err error) {
 	//rest doc http://ip.taobao.com/instructions.html
 	data, err := self.HttpGet("/service/getIpInfo.php", map[string]interface{}{"ip": ip})
 	if err != nil {

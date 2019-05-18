@@ -29,24 +29,22 @@ import (
 	}
 */
 
-//TestCache
-type Course struct {
-	dao.ComCache //或继承再次封装的CacheBase
-	Id           string
-	Exp          int64
-}
-
 func init() {
 	dao.RegisterCache(new(Course).Gotree())
 }
 
-//Course
+// Course
+type Course struct {
+	dao.ComCache //或继承再次封装的CacheBase
+}
+
+// Course
 func (self *Course) Gotree() *Course {
 	self.ComCache.Gotree(self)
 	return self
 }
 
-//Com
+// Com
 func (self *Course) Com() string {
 	return "Feature"
 }

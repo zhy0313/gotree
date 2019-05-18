@@ -20,16 +20,16 @@ gotree 是一个垂直分布式框架。 gotree 的目标是轻松开发分布�
 - [快速使用](#快速使用)
 - [描述](#描述)
 - [分层](#分层)
-- [Gateway](#使用gateway)
-- [BusinessController](#使用BusinessController)
-- [BusinessService](#使用BusinessService)
-- [BusinessCmd](#使用Protocol-business_cmd)
-- [DaoCmd](#使用Protocol-dao_cmd)
-- [ComController](#使用ComController)
-- [ComModel](#使用ComModel)
+- [Gateway](#gateway)
+- [BusinessController](#business_controller)
+- [BusinessService](#business_service)
+- [BusinessCmd](#business_cmd)
+- [DaoCmd](#dao_cmd)
+- [ComController](#com_controller)
+- [ComModel](#com_model)
 - [进阶使用](#进阶使用)
-- [Timer](#Timer)
-- [Helper](#Helper)
+- [Timer](#timer)
+- [Helper](#helper)
 
 
 ## 快速使用
@@ -79,7 +79,7 @@ $ go test -v -count=1 -run TestUserOrder $GOPATH/src/learning/business/unit/gate
 $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
 ```
 
-## 快速入门  
+## 快速入门
 
 ### 描述
 + Business 主要用于逻辑功能处理等。均衡负载部署多台，为网关提供服务。 目录结构在 learning/business。
@@ -97,9 +97,9 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
 ### 分层
 架构主要分为4层。第一层基类 __BusinessController__，作为 Business 的入口控制器, 主要职责有组织和协调Service、逻辑处理。 第二层基类 __BusinessService__, 作为 __BusinessController__ 的下沉层， 主要下沉的职责有拆分、治理、解耦、复用、使用Dao。 第三层基类 __ComController__ ，作为 Dao 的入口控制器，主要职责有组织数据、解耦数据和逻辑、抽象数据源、使用数据源。 第四层多种基类 __ComModel__ 数据库表模型基类、 __ComMemory__ 内存基类、 __ComCache__ redis基类、 __ComApi__ Http数据基类。
 
-### 使用gateway
+### gateway
 ```go
-/*
+/*  
     1. 模拟api网关调用，等同 beego、gin 等api gateway, 以及 tcp 网关项目.
     2. 实际应用中 business 分布在多个物理机器.  gateway.AppendBusiness 因填写多机器的内网ip.
 */
@@ -123,7 +123,7 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
 	}
 ```
 
-### 使用BusinessController  
+### business_controller
 ```go
     /* 
          learning/business/controllers/product_controller.go
@@ -179,7 +179,7 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
     }
 ```
 
-### 使用BusinessService
+### business_service
 ```go
     /* 
          learning/business/service/product.go
@@ -224,7 +224,7 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
     }
 ```
 
-### 使用Protocol-business_cmd
+### business_cmd
 ```go
     /* 
         learning/protocol/business_cmd/product.go
@@ -273,7 +273,7 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
     }
 ```
 
-### 使用Protocol-dao_cmd
+### dao_cmd
 ```go
     /* 
         learning/protocol/dao_cmd/product.go
@@ -325,7 +325,7 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
     }
 ```
 
-### 使用ComController
+### com_controller
 ```go
     /* 
          learning/dao/controllers/product_controller.go
@@ -362,7 +362,7 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
     }
 ```
 
-### 使用ComModel
+### com_model
 ```go
     /* 
          learning/dao/sources/models/product/product.go
@@ -384,7 +384,7 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
         return self
     }
 
-    //多态方法 重写 主要用于返回这个 model 归属的Com, com.conf 统一控制组件开启
+    //多态方法 重写 主要用于绑定 Com, com.conf 统一控制组件开启
     func (self *Product) Com() string {
         return "Product"
     }
@@ -428,7 +428,7 @@ $ go run main.go
 # 观察日志和查阅相关 Feature 代码
 ```
 
-### Timer
+### timer
 ```go
     /* 
          learning/business/timer/feature.go
@@ -469,12 +469,14 @@ $ go run main.go
             featureSer.Course()
         })
 
-        //1.全局禁止使用go func(), 请使用Async。
-	    //2.底层做了优雅关闭和热更新, hook了 async。 保证会话请求的闭环执行, 防止造成脏数据。
+        /*
+            1.全局禁止使用go func(), 请使用Async。
+            2.底层做了优雅关闭和热更新, hook了 async。 保证会话请求的闭环执行, 防止造成脏数据。
+        */
     }
 ```
 
-### Helper
+### helper
 ```go
     /* 
          learning/business/service/feature.go
@@ -536,5 +538,129 @@ $ go run main.go
         //等待以上3个并发结束
         group.Wait()
         return
+    }
+```
+
+### cache
+```go
+    /* 
+        代码文件  learning/dao/sources/cache/course.go
+        配置文件  learning/dao/conf/dev/cache.conf
+        展示 redis 缓存数据源的使用
+    */
+    func init() {
+        dao.RegisterCache(new(Course).Gotree())
+    }
+
+    // Course
+    type CourseCache struct {
+        dao.ComCache            // 继承缓存基类
+    }
+
+    // Course
+    func (self *Course) Gotree() *Course {
+        self.ComCache.Gotree(self)
+        return self
+    }
+
+    // 多态方法 重写 主要用于绑定 Com, com.conf 统一控制组件开启
+    func (self *Course) Com() string {
+        return "Feature"
+    }
+
+    func (self *Course) TestGet() (result struct {
+        CourseInt    int
+        CourseString string
+    }, err error) {
+
+        // self.do 函数，调用redis
+        strData, err := redis.Bytes(self.Do("GET", "Feature"))
+        if err != nil {
+            return
+        }
+        err = json.Unmarshal(strData, &result)
+        return
+    }    
+```
+
+### memory
+```go
+    /* 
+        代码文件  learning/dao/sources/memory/course.go
+        展示内存数据源的使用
+    */
+    func init() {
+        dao.RegisterMemory(new(Course).Gotree())
+    }
+
+    // Course
+    type Course struct {
+        dao.ComMemory    //继承内存基类
+    }
+
+    // Gotree
+    func (self *Course) Gotree() *Course {
+        self.ComMemory.Gotree(self)
+        return self
+    }
+
+    // 多态方法 重写 主要用于绑定 Com, com.conf 统一控制组件开启
+    func (self *Course) Com() string {
+        return "Feature"
+    }
+
+    func (self *Course) TestSet(i int, s string) {
+        var data struct {
+            CourseInt    int
+            CourseString string
+        }
+        data.CourseInt = i
+        data.CourseString = s
+        if self.Setnx("Feature", data) {
+            //如果 "Feature" 不存在
+            self.Expire("Feature", 5)   //Expire 设置生存时间
+        }
+        self.Set("Feature", data) //直接覆盖
+
+        //Get 存在返回true, 不存在反回false
+        exists := self.Get("Feature", &data)
+    }
+```
+
+### api
+```go
+    /* 
+        代码文件  learning/dao/sources/api/tao_bao_ip.go
+        配置文件  learning/dao/conf/api.conf
+        展示 http 数据源的使用
+    */
+    func init() {
+        dao.RegisterApi(new(TaoBaoIp).Gotree())
+    }
+
+    // TaoBaoIp
+    type TaoBaoIp struct {
+        dao.ComApi
+    }
+
+    //Gotree
+    func (self *TaoBaoIp) Gotree() *TaoBaoIp {
+        self.ComApi.Gotree(self)
+        return self
+    }
+
+    // 绑定配置文件[api]域下的host地址
+    func (self *TaoBaoIp) Api() string {
+        return "TaoBaoIp"
+    }
+
+    // GetIpInfo
+    func (self *TaoBaoIp) GetIpInfo(ip string) (country string, err error) {
+        //doc http://ip.taobao.com/instructions.html
+        
+        //get post postjson
+        data, err := self.HttpGet("/service/getIpInfo.php", map[string]interface{}{"ip": ip})
+        //data, err := self.HttpPost("/service/getIpInfo.php", map[string]interface{}{"ip": ip})
+        //data, err := self.HttpPostJson("/service/getIpInfo.php", map[string]interface{}{"ip": ip})
     }
 ```

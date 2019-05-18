@@ -74,7 +74,7 @@ func (self *FeatureController) Course(cmd dao_cmd.Course, result *helper.VoidVal
 	helper.Log().WriteInfo(memoryCourse.TestGet())
 
 	//http数据
-	helper.Log().WriteInfo(geoApi.Country("49.87.27.95"))
+	helper.Log().WriteInfo(geoApi.GetIpInfo("49.87.27.95"))
 
 	//队列处理
 	self.Queue("FeatureQueue", func() error {
@@ -91,45 +91,5 @@ func (self *FeatureController) Course(cmd dao_cmd.Course, result *helper.VoidVal
 		}
 		return mOrderLog.Add(id, "add")
 	})
-	return
-}
-
-// Course 特性相关教程 helper.NewGroup() 版
-func (self *FeatureController) Course2(cmd dao_cmd.Course, result *helper.VoidValue) (e error) {
-	var (
-		cacheCourse  *cache.Course  //redis数据源
-		memoryCourse *memory.Course //内存数据源
-		geoApi       *api.TaoBaoIp  //http数据源, 第三方接口 or 其他内部系统接口
-	)
-	//服务定位器 获取实体对象
-	self.Cache(&cacheCourse)
-	self.Memory(&memoryCourse)
-	self.Api(&geoApi)
-
-	taskGroup := helper.NewGroup()
-	taskGroup.Add(func() error {
-		//redis写读
-		cacheCourse.TestSet(cmd.CourseInt, cmd.CourseString)
-		helper.Log().WriteInfo(cacheCourse.TestGet())
-		return nil
-	})
-
-	taskGroup.Add(func() error {
-		//memory写读
-		memoryCourse.TestSet(cmd.CourseInt, cmd.CourseString)
-		helper.Log().WriteInfo(memoryCourse.TestGet())
-		return nil
-	})
-
-	taskGroup.Add(func() error {
-		//http数据
-		helper.Log().WriteInfo(geoApi.Country("49.87.27.95"))
-		return nil
-	})
-
-	//等待task匿名函数全部结束 默认go池大小为 AddFunc的数量，超过则为默认64。
-	e = taskGroup.Wait()
-	//超过则为128
-	//e = taskGroup.Wait(128)
 	return
 }

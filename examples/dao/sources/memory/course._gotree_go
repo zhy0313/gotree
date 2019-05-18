@@ -4,22 +4,22 @@ import (
 	"github.com/8treenet/gotree/dao"
 )
 
+func init() {
+	dao.RegisterMemory(new(Course).Gotree())
+}
+
 // Course
 type Course struct {
 	dao.ComMemory
 }
 
-func init() {
-	dao.RegisterMemory(new(Course).Gotree())
-}
-
-//Gotree
+// Gotree
 func (self *Course) Gotree() *Course {
 	self.ComMemory.Gotree(self)
 	return self
 }
 
-//Com
+// Com
 func (self *Course) Com() string {
 	return "Feature"
 }
