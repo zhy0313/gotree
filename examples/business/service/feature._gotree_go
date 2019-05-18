@@ -72,13 +72,19 @@ func (self *Feature) Simple() (result []struct {
 	//group go并发
 	group := helper.NewGroup()
 	group.Add(func() error {
-		//这块代码是go并发里跑的
-		//这块代码是go并发里跑的
-		//这块代码是go并发里跑的
+		helper.Log().WriteInfo("WriteInfo")
+		return nil
+	})
+	group.Add(func() error {
+		helper.Log().WriteWarn("WriteWarn")
+		return nil
+	})
+	group.Add(func() error {
+		helper.Log().WriteDebug("WriteDebug")
 		return nil
 	})
 
-	err := group.Wait()
-	helper.Log().WriteInfo(err)
+	//等待以上3个并发结束
+	group.Wait()
 	return
 }

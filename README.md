@@ -27,6 +27,9 @@ gotree 是一个垂直分布式框架。 gotree 的目标是轻松开发分布�
 - [DaoCmd](#使用Protocol-dao_cmd)
 - [ComController](#使用ComController)
 - [ComModel](#使用ComModel)
+- [进阶使用](#进阶使用)
+- [Timer](#Timer)
+- [Helper](#Helper)
 
 
 ## 快速使用
@@ -361,6 +364,10 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
 
 ### 使用ComModel
 ```go
+    /* 
+         learning/dao/sources/models/product/product.go
+         数据库表模型示例，与 db 配置文件 Com 相关, learning/dao/conf/dev/db.conf   
+    */
     func init() {
         //注册 Product 模型
         dao.RegisterModel(new(Product).Gotree())
@@ -419,4 +426,115 @@ $ cd $GOPATH/src/learning/business
 $ go run main.go
 
 # 观察日志和查阅相关 Feature 代码
+```
+
+### Timer
+```go
+    /* 
+         learning/business/timer/feature.go
+         定时器示例 learning/business/conf/dev/business.conf -> TimerOn，控制定期的开启和关闭
+    */
+    func init() {
+        // RegisterTimer 注册定时器
+        business.RegisterTimer(new(Feature).Gotree())
+    }
+
+    // Feature
+    type Feature struct {
+        business.BusinessTimer
+    }
+
+    // Feature
+    func (self *Feature) Gotree() *Feature {
+        self.BusinessTimer.Gotree(self)
+        //注册触发定时器， 每5000毫秒秩序
+        self.RegisterTickTrigger(5000, self.CourseTick)
+
+        //注册每日定时器，每日3点1分执行
+        self.RegisterDayTrigger(3, 1, self.CourseDay)
+        return self
+    }
+
+    // CourseTick
+    func (self *Feature) CourseTick() {
+        var (
+            //learning/business/service/feature.go
+            featureSer *service.Feature
+        )
+        //服务定位器获取 Feature 服务，  
+        self.Service(&featureSer)
+
+        //异步调用Feature.Course方法
+        self.Async(func(ac business.AsyncController) {
+            featureSer.Course()
+        })
+
+        //1.全局禁止使用go func(), 请使用Async。
+	    //2.底层做了优雅关闭和热更新, hook了 async。 保证会话请求的闭环执行, 防止造成脏数据。
+    }
+```
+
+### Helper
+```go
+    /* 
+         learning/business/service/feature.go
+         展示 Helper 的使用， 包含了一些辅助函数。
+    */
+    func (self *Feature) Simple() (result []struct {
+        Id    int
+        Value string
+        Pos   float64
+    }, e error) {
+        var mapFeature map[int]struct {
+            Id    int
+            Value string
+        }
+        //使用 NewMap 函数，创建匿名结构体的 map
+        helper.NewMap(&mapFeature)
+
+        var newFeatures []struct {
+            Id    int
+            Value string
+        }
+        //使用 NewSlice 函数，创建匿名结构体的数组
+        if e = helper.NewSlice(&newFeatures, 2); e != nil {
+            return
+        }
+        for index := 0; index < len(newFeatures); index++ {
+            newFeatures[index].Id = index + 1
+            newFeatures[index].Value = "hello"
+
+            //匿名数组结构体赋值赋值给 匿名map结构体
+            mapFeature[index] = newFeatures[index]
+        }
+
+        //内存拷贝，支持数组，结构体。
+        if e = helper.Memcpy(&result, newFeatures); e != nil {
+            return
+        }
+
+        //反射升序排序
+        helper.SliceSortReverse(&result, "Id")
+        //反射降序排序
+        helper.SliceSort(&result, "Id")
+
+        //group go并发
+        group := helper.NewGroup()
+        group.Add(func() error {
+            helper.Log().WriteInfo("WriteInfo")
+            return nil
+        })
+        group.Add(func() error {
+            helper.Log().WriteWarn("WriteWarn")
+            return nil
+        })
+        group.Add(func() error {
+            helper.Log().WriteDebug("WriteDebug")
+            return nil
+        })
+
+        //等待以上3个并发结束
+        group.Wait()
+        return
+    }
 ```
