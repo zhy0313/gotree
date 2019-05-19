@@ -60,11 +60,11 @@ func AppDaemon() {
 		}
 		//启动时间和panic时间 如果在3秒内 停止服务
 		if time.Now().Unix()-startTime <= startSecs {
-			helper.Log().WriteDaemonError("异常错误:", stderr.String())
+			helper.Log().WriteDaemonError("AppDaemon-error:", stderr.String())
 			os.Exit(1)
 		}
 
-		helper.Log().WriteDaemonError("异常错误,2秒后开始重启 :", stderr.String())
+		helper.Log().WriteDaemonError("AppDaemon-error restart after 2 seconds, error:", stderr.String())
 		time.Sleep(2 * time.Second)
 	}
 }
@@ -83,7 +83,7 @@ func AppStop(name, addr string, port int) {
 		if err != nil {
 			continue
 		}
-		fmt.Println("关闭"+name+" pid:", pid)
+		fmt.Println("AppStop- Close Server"+name+" pid:", pid)
 		process.Signal(syscall.SIGINT)
 	}
 }
@@ -116,15 +116,15 @@ func AppRestart(name, addr string, port int) {
 			if i > 4 {
 				pid = newPid(name, addr, port)
 				if pid != 0 {
-					fmt.Fprintf(os.Stdout, "重启进度 : %%%d\r", 100)
+					fmt.Fprintf(os.Stdout, "AppRestart-newPid Restart progress : %%%d\r", 100)
 					break
 				}
 			}
-			fmt.Fprintf(os.Stdout, "重启进度 : %%%d\r", i*10)
+			fmt.Fprintf(os.Stdout, "AppRestart-pid Restart progress : %%%d\r", i*10)
 			time.Sleep(time.Millisecond * time.Duration(sleepMs))
 		}
 		if pid == 0 {
-			fmt.Println("启动失败，查看error日志。")
+			fmt.Println("AppRestart-pid Startup failed, please check the error log")
 			os.Exit(1)
 		}
 		over <- pid
@@ -139,7 +139,7 @@ func AppRestart(name, addr string, port int) {
 	}
 	newpid := <-over
 	if err == nil {
-		fmt.Printf("重启进度 : %%%d\n", 100)
-		fmt.Println("启动"+name+" pid:", newpid)
+		fmt.Printf("AppRestart-newpid-over Restart progress : %%%d\n", 100)
+		fmt.Println("AppRestart-newpid-over StartUp"+name+" pid:", newpid)
 	}
 }

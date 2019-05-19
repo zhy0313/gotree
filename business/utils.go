@@ -32,7 +32,7 @@ func viewDaos() {
 	client, _ := utilsClient()
 	var replys string
 	client.Call("InnerServer.DaoServerInfo", 100, &replys)
-	fmt.Println(fmt.Sprintf("\x1b[0;%dm%s\x1b[0m", 34, "dao容器服务信息:"))
+	fmt.Println(fmt.Sprintf("\x1b[0;%dm%s\x1b[0m", 34, "viewDaos-client Dao container service info:"))
 	for _, str := range strings.Split(replys, ";") {
 		fmt.Println(str)
 	}
@@ -40,7 +40,7 @@ func viewDaos() {
 	replys = ""
 	client.Call("InnerServer.DaoStatus", 100, &replys)
 	client.Close()
-	fmt.Println(fmt.Sprintf("\x1b[0;%dm%s\x1b[0m", 34, "dao组件连接信息:"))
+	fmt.Println(fmt.Sprintf("\x1b[0;%dm%s\x1b[0m", 34, "viewDaos-client Dao component connection info:"))
 	for _, str := range strings.Split(replys, ";") {
 		fmt.Println(str)
 	}
@@ -49,14 +49,14 @@ func viewDaos() {
 func viewRuntime() {
 	client, addr := utilsClient()
 	if client == nil {
-		fmt.Println(fmt.Sprintf("\x1b[0;%dm%s\x1b[0m", 31, "本机未启动business"))
+		fmt.Println(fmt.Sprintf("\x1b[0;%dm%s\x1b[0m", 31, "viewRuntime-client business service not startup"))
 		os.Exit(0)
 	}
 	var replys string
 	client.Call("InnerServer.BusinessInfo", 100, &replys)
 	var pid int
 	client.Call("InnerServer.ProcessId", 100, &pid)
-	fmt.Println(fmt.Sprintf("\x1b[0;%dm%s\x1b[0m", 34, "本服务信息 监听地址: "+addr+", pid:"+fmt.Sprint(pid)))
+	fmt.Println(fmt.Sprintf("\x1b[0;%dm%s\x1b[0m", 34, "service info Listening address: "+addr+", pid:"+fmt.Sprint(pid)))
 	fmt.Println(replys)
 	client.Close()
 }
@@ -65,7 +65,7 @@ func viewQps(top int) {
 	//如果top 大于1 只刷新前30
 	client, _ := utilsClient()
 	if client == nil {
-		fmt.Println(fmt.Sprintf("\x1b[0;%dm%s\x1b[0m", 31, "本机未启动business"))
+		fmt.Println(fmt.Sprintf("\x1b[0;%dm%s\x1b[0m", 31, "viewQps-client business service not startup"))
 		os.Exit(0)
 	}
 	var replys string

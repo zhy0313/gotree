@@ -66,7 +66,7 @@ func (self *BusinessService) TestOn(testDaos ...string) {
 	mode := helper.Config().String("sys::Mode")
 	//生产环境不可进行单元测试
 	if mode == "prod" {
-		helper.Log().WriteError("BusinessService-TestOn Product environment cannot be unit tested service")
+		helper.Log().WriteError("BusinessService-TestOn Unit test service is not available in production environments")
 		os.Exit(-1)
 	}
 	rpc.GoDict().Set("gseq", "ServiceUnit")
@@ -85,7 +85,6 @@ func (self *BusinessService) TestOn(testDaos ...string) {
 
 func (self *BusinessService) OpenService() {
 	exist := _scl.CheckService(self.TopChild())
-	//禁止重复实例化
 	if exist {
 		helper.Exit("BusinessService-OpenService Prohibit duplicate instantiation")
 	}

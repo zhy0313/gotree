@@ -73,7 +73,7 @@ func (self *BusinessTimer) stopTick(args ...interface{}) {
 func (self *BusinessTimer) Service(child interface{}) {
 	err := _scl.Service(child)
 	if err != nil {
-		helper.Exit("BusinessTimer-Service Load service failed error:" + err.Error())
+		helper.Exit("BusinessTimer-Service Service not found error:" + err.Error())
 	}
 	return
 }

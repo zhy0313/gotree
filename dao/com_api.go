@@ -65,7 +65,7 @@ func (self *ComApi) Gotree(child interface{}) *ComApi {
 func (self *ComApi) TestOn() {
 	mode := helper.Config().String("sys::Mode")
 	if mode == "prod" {
-		helper.Exit("生产环境不可以使用单元测试api")
+		helper.Exit("ComApi-TestOn Unit test api is not available in production environments")
 	}
 	self.apiOn()
 }
@@ -210,13 +210,13 @@ func (self *ComApi) count() error {
 	defer self.countMutex.Unlock()
 	self.countMutex.Lock()
 	if self.minMax > 0 && self.minCount >= self.minMax {
-		return errors.New("每分钟调用频次超过限制, host:" + self.host)
+		return errors.New("ComApi-count Frequency per minute exceeded the limit, host:" + self.host)
 	}
 	if self.hourMax > 0 && self.hourCount >= self.hourMax {
-		return errors.New("每小时调用频次超过限制, host:" + self.host)
+		return errors.New("ComApi-count Hourly usage exceeded the limit, host:" + self.host)
 	}
 	if self.dayMax > 0 && self.dayCount >= self.dayMax {
-		return errors.New("每天调用频次超过限制, host:" + self.host)
+		return errors.New("ComApi-count Frequency of daily use exceeds the limit, host:" + self.host)
 	}
 
 	if self.minMax > 0 {

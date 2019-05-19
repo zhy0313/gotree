@@ -106,7 +106,7 @@ func Run(args ...interface{}) {
 		num := rpc.CurrentCallNum()
 		timenum := lib.CurrentTimeNum()
 		anum := AsyncNum()
-		helper.Log().WriteInfo("business close: 定时服务剩余:", timenum, "请求服务剩余:", num, "异步服务剩余:", anum)
+		helper.Log().WriteInfo("business run close: Timing service surplus:", timenum, "Request service surplus:", num, "Async service surplus:", anum)
 		if num <= 0 && anum <= 0 && timenum <= 0 {
 			break
 		}

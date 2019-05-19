@@ -83,7 +83,7 @@ func RegisterModel(service interface{}) {
 	}
 	service.(init).DaoInit()
 	if _msl.CheckService(service) {
-		helper.Exit("RegisterModel 重复注册")
+		helper.Exit("RegisterModel duplicate registration")
 	}
 	_msl.AddService(service)
 }
@@ -98,7 +98,7 @@ func RegisterCache(service interface{}) {
 	}
 	service.(init).DaoInit()
 	if _csl.CheckService(service) {
-		helper.Exit("RegisterCache 重复注册")
+		helper.Exit("RegisterCache duplicate registration")
 	}
 	_csl.AddService(service)
 }
@@ -113,7 +113,7 @@ func RegisterMemory(service interface{}) {
 	}
 	service.(init).DaoInit()
 	if _esl.CheckService(service) {
-		helper.Exit("RegisterMemory 重复注册")
+		helper.Exit("RegisterMemory duplicate registration")
 	}
 	_esl.AddService(service)
 }
@@ -124,7 +124,7 @@ func RegisterApi(service interface{}) {
 		return
 	}
 	if _api.CheckService(service) {
-		helper.Exit("RegisterApi 重复注册")
+		helper.Exit("RegisterApi duplicate registration")
 	}
 	_api.AddService(service)
 }
@@ -156,13 +156,13 @@ func RegisterQueue(controller interface{}, queueName string, queueLen int, gorou
 func daoOn() {
 	openDao, err := helper.Config().GetSection("com_on")
 	if err != nil {
-		helper.Exit("未找到 com.conf com_on:" + err.Error())
+		helper.Exit("daoOn-openDao Not found com.conf com_on:" + err.Error())
 	}
 	controllers := remote_call.RpcControllerNames()
 	for k, v := range openDao {
 		id, e := strconv.Atoi(v)
 		if e != nil {
-			helper.Log().WriteError("dao id 错误:", k, v)
+			helper.Log().WriteError("daoOn-openDao dao id error:", k, v)
 			continue
 		}
 		var comName string
@@ -172,7 +172,7 @@ func daoOn() {
 			}
 		}
 		if comName == "" {
-			helper.Log().WriteError("未找到 com:", k)
+			helper.Log().WriteError("daoOn-openDao error:Not found com:", k)
 			continue
 		}
 
@@ -218,7 +218,7 @@ func Run(args ...interface{}) {
 	rpcser := remote_call.RpcServerRun(bindAddr, func(svrName string) {
 		for _, item := range _daoOnList {
 			if svrName == item.Name {
-				helper.Log().WriteInfo("启动:", svrName, "id:", item.Id)
+				helper.Log().WriteInfo("startup:", svrName, "id:", item.Id)
 				_daoOnList = append(_daoOnList, item)
 				return
 			}
@@ -231,7 +231,7 @@ func Run(args ...interface{}) {
 	for index := 0; index < 30; index++ {
 		num := rpc.CurrentCallNum()
 		qlen := allQueueLen()
-		helper.Log().WriteInfo("dao close: 请求服务剩余:", num, "队列剩余:", qlen)
+		helper.Log().WriteInfo("Run dao close: Request service surplus:", num, "Queue surplus:", qlen)
 		if num <= 0 && qlen <= 0 {
 			break
 		}
@@ -247,7 +247,7 @@ func Run(args ...interface{}) {
 func initInnerClient(ic *remote_call.InnerClient) {
 	baddrs := helper.Config().String("BusinessAddrs")
 	if baddrs == "" {
-		helper.Log().WriteError("BusinessAddrs地址为空")
+		helper.Log().WriteError("initInnerClient-BusinessAddrs baddrs address is empty.")
 	}
 	for index := 0; index < len(_daoOnList); index++ {
 		ic.AddDaoByNode(_daoOnList[index].Name, _daoOnList[index].Id, _daoOnList[index].Extra...)

@@ -43,11 +43,11 @@ func (self *ComCache) Gotree(child interface{}) *ComCache {
 func (self *ComCache) TestOn() {
 	mode := helper.Config().String("sys::Mode")
 	if mode == "prod" {
-		helper.Exit("生产环境不可以使用单元测试cache")
+		helper.Exit("ComCache-TestOn Unit test cache is not available in production environments")
 	}
 	self.DaoInit()
 	if helper.Config().DefaultString("com_on::"+self.comName, "") == "" {
-		helper.Exit("未找到 dao.conf com_on 域下的组件 " + self.comName)
+		helper.Exit("ComCache-TestOn Component not found dao.conf com_on " + self.comName)
 	}
 	self.redisOn()
 }
@@ -82,14 +82,14 @@ func (self *ComCache) redisOn() {
 	}
 	redisinfo := helper.Config().String("redis::" + self.comName)
 	if redisinfo == "" {
-		helper.Log().WriteError("配置文件 dao:" + self.comName + "redis地址错误或未找到")
+		helper.Log().WriteError("ComCache-redisOn-redisinfo Config file dao:" + self.comName + " redis address error or not found")
 	}
 	list := strings.Split(redisinfo, ";")
 	m := map[string]string{}
 	for _, item := range list {
 		kv := strings.Split(item, "=")
 		if len(kv) != 2 {
-			helper.Log().WriteError("配置文件 dao:" + self.comName + "redis地址错误")
+			helper.Log().WriteError("ComCache-redisOn-kv Config file dao:" + self.comName + " redis address error or not found")
 			continue
 		}
 		m[kv[0]] = kv[1]
@@ -112,11 +112,11 @@ func (self *ComCache) redisOn() {
 	imaxIdleConns, ei := strconv.Atoi(maxIdleConns)
 	imaxOpenConns, eo := strconv.Atoi(maxOpenConns)
 	if ei != nil || eo != nil || imaxIdleConns == 0 || imaxOpenConns == 0 || imaxIdleConns > imaxOpenConns {
-		helper.Exit("连接dao redis:" + self.comName + "失败, 错误原因: MaxIdleConns或MaxOpenConns 参数错误," + fmt.Sprint(imaxIdleConns, imaxOpenConns))
+		helper.Exit("ComCache-redisOn Connect dao redis:" + self.comName + "failed, error: MaxIdleConns or MaxOpenConns are invalid argumens," + fmt.Sprint(imaxIdleConns, imaxOpenConns))
 	}
 
 	db, _ := strconv.Atoi(m["database"])
-	helper.Log().WriteInfo("connect redis: MaxIdleConns:" + maxIdleConns + " MaxOpenConns:" + maxOpenConns + " config:" + fmt.Sprint(m))
+	helper.Log().WriteInfo("ComCache-redisOn Connect redis: MaxIdleConns:" + maxIdleConns + " MaxOpenConns:" + maxOpenConns + " config:" + fmt.Sprint(m))
 	client, e := redis.NewCache(m["server"], m["password"], db, imaxIdleConns, imaxOpenConns)
 	if e != nil {
 		helper.Exit(e.Error())
@@ -127,7 +127,7 @@ func (self *ComCache) redisOn() {
 //Do
 func (self *ComCache) Do(cmd string, args ...interface{}) (reply interface{}, e error) {
 	if !self.open || self.comName == "" {
-		helper.Exit("cache error: 未开启dao:" + self.comName)
+		helper.Exit("ComCache-Do-cache error: Not opened dao:" + self.comName)
 	}
 	reply, e = redis.Do(self.comName, cmd, args...)
 	return

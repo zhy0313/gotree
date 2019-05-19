@@ -74,7 +74,7 @@ func (self *ServiceLocator) Broadcast(method string, arg interface{}) error {
 		}
 	}
 	if !call {
-		return errors.New("未找到 '" + method + "'方法")
+		return errors.New("ServiceLocator-Broadcast Method not found" + method)
 	}
 	return nil
 }

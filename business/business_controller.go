@@ -52,7 +52,7 @@ func (self *BusinessController) Gotree(child interface{}) *BusinessController {
 func (self *BusinessController) Service(child interface{}) {
 	err := _scl.Service(child)
 	if err != nil {
-		helper.Exit("BusinessController-Service Load service failed error:" + err.Error())
+		helper.Exit("BusinessController-Service Service not found error:" + err.Error())
 	}
 	return
 }
