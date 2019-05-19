@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-//go test -v -run TestUserModel $GOPATH/src/examples/dao/unit/learn_test.go
+//go test -v -count=1 -run TestUserModel $GOPATH/src/learning/dao/unit/learn_test.go
 func TestUserModel(t *testing.T) {
 	object := new(user.User).Gotree()
 	//开启单元测试
@@ -53,5 +53,5 @@ func TestTaoBaoIp(t *testing.T) {
 	//开启单元测试
 	object.TestOn()
 
-	t.Log(object.Country("49.87.27.95"))
+	t.Log(object.GetIpInfo("49.87.27.95"))
 }
