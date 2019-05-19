@@ -191,7 +191,7 @@ $ go run $GOPATH/src/learning/business/unit/qps_press/main.go
          learning/business/service/product.go
     */
     func init() {
-        //注册 service 于控制器 self.Service(&) 关联
+        // RegisterService 注册 service 与控制器 self.Service(&) 关联
         business.RegisterService(new(Product).Gotree())
     }
 
@@ -805,6 +805,11 @@ $ go run main.go
     $ ./business start
     $ ps
 
-    # 执行单元测试
+
+    # 单元测试 多实例
+    $ vi $GOPATH/src/learning/business/unit/gateway_test.go
+    # 加入新实例
+    # gateway.AppendBusiness("127.0.0.1:8888")
+    # gateway.AppendBusiness("127.0.0.1:18888")
     $ go test -v -count=1 -run TestStore $GOPATH/src/learning/business/unit/gateway_test.go
 ```
