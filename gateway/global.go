@@ -46,10 +46,12 @@ func Run(args ...int) {
 		callTimeout = args[1]
 	}
 	_scl.GetComponent(&ic)
-	_scl.AddComponent(new(remote_call.RpcClient).Gotree(concurrency, callTimeout))
+	rpcclient := new(remote_call.RpcClient).Gotree(concurrency, callTimeout)
+	_scl.AddComponent(rpcclient)
 	rpcBreak := new(remote_call.RpcBreak).Gotree()
 	_scl.AddComponent(rpcBreak)
 	rpcBreak.RunTick()
+	rpcclient.Start()
 	go ic.Run()
 }
 

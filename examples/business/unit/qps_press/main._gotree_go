@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/8treenet/gotree/api"
+	"github.com/8treenet/gotree/gateway"
 )
 
 var (
@@ -23,8 +23,8 @@ func main() {
 		addNum = i
 	}
 	fmt.Println("每秒压测:", addNum)
-	api.AppendBusiness("127.0.0.1:8888")
-	api.Run()
+	gateway.AppendBusiness("127.0.0.1:8888")
+	gateway.Run()
 	index := 1
 	for {
 		atomic.AddInt32(&seq, int32(addNum))
@@ -56,7 +56,7 @@ func send() {
 		go func() {
 			cmd := new(business_cmd.QpsCmd).QpsCmd("press")
 			value := business_value.Qps{}
-			e := api.RpcClient().Call(cmd, &value)
+			e := gateway.RpcClient().Call(cmd, &value)
 			if value.Text != "press" || e != nil {
 				return
 			}

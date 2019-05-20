@@ -65,6 +65,12 @@ func (self *RpcClient) Gotree(concurrency int, timeout int) *RpcClient {
 	return self
 }
 
+func (self *RpcClient) Start() {
+	self.GetComponent(&self.innerMaster)
+	self.GetComponent(&self.rpcBreak)
+	self.GetComponent(&self.rpcQps)
+}
+
 //Call cmd obj参数, reply &daostruct 或 &businessstruct
 func (self *RpcClient) Call(obj interface{}, reply interface{}) (err error) {
 	var (
@@ -73,13 +79,6 @@ func (self *RpcClient) Call(obj interface{}, reply interface{}) (err error) {
 		beginMs     int64
 		timeoutCall bool
 	)
-
-	if self.innerMaster == nil {
-		self.GetComponent(&self.innerMaster)
-	}
-	if self.rpcBreak == nil {
-		self.GetComponent(&self.rpcBreak)
-	}
 
 	cmd := obj.(cmdCall)
 	if !self.innerMaster.ping {
@@ -176,10 +175,15 @@ func (self *RpcClient) Call(obj interface{}, reply interface{}) (err error) {
 
 	for index := int8(1); index <= self.retry; index++ {
 		err = self.limiteGo.Go(fun)
-		//如果无错误 或 不是网络造成的错误return
+		//如果无错误 或 不是网络造成的错误 return
 		if err == nil || err != ErrNetwork {
 			go self.rpcBreak.Call(cmd, timeoutCall)
 			return err
+		}
+		//如果是网络错误 并且最后一次重试
+		if err == ErrNetwork && index == self.retry {
+			go self.rpcBreak.Call(cmd, true)
+			break
 		}
 		time.Sleep(1 * time.Second)
 	}
@@ -228,9 +232,6 @@ func (self *RpcClient) Close() {
 }
 
 func (self *RpcClient) qps(serviceMethod string, ms int64) {
-	if self.rpcQps == nil {
-		self.GetComponent(&self.rpcQps)
-	}
 	if self.rpcQps == nil {
 		panic("RpcQps not obtained")
 	}
