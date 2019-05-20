@@ -242,7 +242,7 @@ func (self *ComModel) profiler(ssql string, args ...interface{}) {
 			if etype == "all" || etype == "index" {
 				warn = true
 			}
-			explainLog += " tableName " + explain[index].Table + " Sql Explain Type " + explain[index].Type 
+			explainLog += " tableName " + explain[index].Table + " Sql Explain Type " + explain[index].Type
 			tables = append(tables, explain[index].Table)
 		}
 	}
@@ -274,8 +274,8 @@ func (self *ComModel) profiler(ssql string, args ...interface{}) {
 			tableCount, ok = modelProfilerCount[str+"_"+table]
 			delete(modelProfilerCount, str+"_"+table)
 			modelProfilerSync.Unlock()
-			if tableCount > 1 && ok {Aa reads the table dd3 times in a bseq
-				helper.Log().Warning(str + "reads the table'" + table + "' " + fmt.Sprint(tableCount) +" times in a bsep")
+			if tableCount > 1 && ok {
+				helper.Log().Warning(str + "reads the table'" + table + "' " + fmt.Sprint(tableCount) + " times in a bsep")
 			}
 		}()
 	}
