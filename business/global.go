@@ -96,6 +96,7 @@ func Run(args ...interface{}) {
 	_ssl.GetComponent(&breaker)
 	_scl.NotitySubscribe("startup")
 	breaker.RunTick()
+	client.Start()
 	rpcSer := remote_call.RpcServerRun(bindAddr)
 	_scl.NotitySubscribe("shutdown")
 	helper.Log().Notice("business close...")
