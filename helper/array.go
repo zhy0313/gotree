@@ -93,7 +93,7 @@ func (self sortSlice) Less(i, j int) bool {
 func SliceSort(array interface{}, field string, reverse ...bool) {
 	srcValue := reflect.ValueOf(array)
 	if srcValue.Elem().Kind() != reflect.Slice {
-		panic("ArraySort 不是切片数据或为空")
+		panic("SliceSort is not slice data or empty")
 	}
 
 	if srcValue.Elem().Len() == 0 {
@@ -104,11 +104,11 @@ func SliceSort(array interface{}, field string, reverse ...bool) {
 	for index := 0; index < srcValue.Elem().Len(); index++ {
 		sortFiled := srcValue.Elem().Index(index).FieldByName(field)
 		if !sortFiled.IsValid() {
-			panic("ArraySort field不存在成员:" + field)
+			panic("SliceSort Filed:" + field+" not exist")
 		}
 		numFiled, err := strconv.Atoi(fmt.Sprint(sortFiled.Interface()))
 		if err != nil {
-			panic("ArraySort field获取int失败" + field)
+			panic("SliceSort Filed:" + field + " conversion int type failed")
 		}
 		sortArray[index].x = numFiled
 		sortArray[index].data = srcValue.Elem().Index(index)

@@ -159,7 +159,7 @@ func (self *ComModel) ormOn() {
 	maxIdleConns, ei := strconv.Atoi(dbMaxIdleConns)
 	maxOpenConns, eo := strconv.Atoi(dbMaxOpenConns)
 	if ei != nil || eo != nil || maxIdleConns == 0 || maxOpenConns == 0 || maxIdleConns > maxOpenConns {
-		helper.Exit("ComModel-ormOn Failure to connect " + self.comName + " db, MaxIdleConns or MaxOpenConns are invalid arguments")
+		helper.Exit("ComModel-ormOn Failure to connect " + self.comName + " db, MaxIdleConns or MaxOpenConns are invalid args")
 	}
 	helper.Log().Notice("ComModel-ormOn Connect com " + self.comName + " database, MaxIdleConns:" + dbMaxIdleConns + ", MaxOpenConns:" + dbMaxOpenConns + ", config:" + dbconfig)
 	err = orm.RegisterDataBase(self.comName, driver, dbconfig, maxIdleConns, maxOpenConns)
@@ -242,7 +242,7 @@ func (self *ComModel) profiler(ssql string, args ...interface{}) {
 			if etype == "all" || etype == "index" {
 				warn = true
 			}
-			explainLog += explain[index].Table + "表" + explain[index].Type + "级别"
+			explainLog += " tableName " + explain[index].Table + " Sql Explain Type " + explain[index].Type 
 			tables = append(tables, explain[index].Table)
 		}
 	}
@@ -274,8 +274,8 @@ func (self *ComModel) profiler(ssql string, args ...interface{}) {
 			tableCount, ok = modelProfilerCount[str+"_"+table]
 			delete(modelProfilerCount, str+"_"+table)
 			modelProfilerSync.Unlock()
-			if tableCount > 1 && ok {
-				helper.Log().Warning("在一个bseq:" + str + " 内读取表'" + table + "' " + fmt.Sprint(tableCount) + "次")
+			if tableCount > 1 && ok {Aa reads the table dd3 times in a bseq
+				helper.Log().Warning(str + "reads the table'" + table + "' " + fmt.Sprint(tableCount) +" times in a bsep")
 			}
 		}()
 	}

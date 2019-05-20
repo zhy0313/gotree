@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-var ErrBreaker = errors.New("熔断")
+var ErrBreaker = errors.New("Fuse")
 
 type VoidValue struct {
 	Void byte

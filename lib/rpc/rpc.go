@@ -426,7 +426,7 @@ func (s *service) call(server *Server, sending *sync.Mutex, mtype *methodType, r
 	//调用构造函数
 	values := t.MethodByName("Gotree").Call(nil)
 	if len(values) < 1 {
-		helper.Log().Error("controllers 接口返回构造函数未返回 指针")
+		helper.Log().Error("service-call controllers has no return value")
 	}
 	type callip interface {
 		RpcInvoke(net.Conn) bool
@@ -474,7 +474,7 @@ func (s *service) call(server *Server, sending *sync.Mutex, mtype *methodType, r
 	if errInter != nil {
 		errmsg = errInter.(error).Error()
 		if gseq == "" && errmsg != "ServerShutDown" {
-			helper.Log().Warning("控制器:"+newtype.Name(), "方法:"+mtype.method.Name, "错误:"+errmsg)
+			helper.Log().Warning("Controller:"+newtype.Name(), "function:"+mtype.method.Name, "error:"+errmsg)
 		}
 	}
 
@@ -776,7 +776,7 @@ func FieldEmpty(v reflect.Value) error {
 		def := defs[index]
 		sn := structName[index]
 		if def != "empty" {
-			return errors.New("命令非空检查 " + t.Name() + "." + sn + "(" + eTyps[index].String() + ")=" + fieldValue)
+			return errors.New("Non-empty parameter checking " + t.Name() + "." + sn + "(" + eTyps[index].String() + ")=" + fieldValue)
 		}
 	}
 

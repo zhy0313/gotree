@@ -9,7 +9,7 @@ var _conf config.Configer
 func LoadConfig(project string) (e error) {
 	defer func() {
 		if e != nil {
-			panic("找不到配置文件 \n ./conf/app.conf \n /usr/local/etc/+project+/app.conf \n /etc/+project+/app.conf")
+			panic("Config file not Found \n ./conf/app.conf \n /usr/local/etc/+project+/app.conf \n /etc/+project+/app.conf")
 		}
 	}()
 	_conf, e = config.NewConfig("ini", "conf/app.conf")
